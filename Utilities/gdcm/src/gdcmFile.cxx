@@ -1,10 +1,10 @@
 /*=========================================================================
 
   Program:   gdcm
-  Module:    gdcmFile.cxx
+  Module:    $RCSfile: gdcmFile.cxx,v $
   Language:  C++
-  Date:      $Date$
-  Version:   $Revision$
+  Date:
+  Version:
 
   Copyright (c) CREATIS (Centre de Recherche et d'Applications en Traitement de
   l'Image). All rights reserved. See Doc/License.txt or
@@ -525,22 +525,6 @@ bool File::GetSpacing(float &xspacing, float &yspacing, float &zspacing)
        }
      return true;
      }
-   else if( sopclassuid_used == "RT Dose Storage" )
-     {
-     // (3004,000c) DS [0.0\-2.5\-5.0\-7.5\-10.0\-12.5... # 132,23 GridFrameOffsetVector
-     DocEntry *p3 = GetDocEntry(0x3004,0x000c);
-     if( !p3 ) return false;
-     ContentEntry *entry2 = dynamic_cast<ContentEntry *>(p3);
-     std::string gridframeoffset = entry2->GetValue();
-     float z1, z2;
-     if ( sscanf( gridframeoffset.c_str(), "%f\\%f", &z1, &z2) != 2 )
-       {
-       zspacing = 1.;
-       return false;
-       }
-     zspacing = z2 - z1; // can be negative ...
-     return true;
-     }
 
   return false;
 }
@@ -759,11 +743,6 @@ float File::GetZSpacing()
 float File::GetXOrigin()
 {
    float xImPos, yImPos, zImPos;
-   if ( GetOriginFromSequence(xImPos, yImPos, zImPos) )
-   {
-   return xImPos;
-   }
-
    std::string strImPos = GetEntryValue(0x0020,0x0032);
 
    if ( strImPos == GDCM_UNFOUND )
@@ -785,68 +764,6 @@ float File::GetXOrigin()
    return xImPos;
 }
 
-// Special case:
-//  ts["1.2.840.10008.5.1.4.1.1.4.1"] = "Enhanced MR Image Storage";
-bool File::GetOriginFromSequence(float &xorigin, float &yorigin, float &zorigin)
-{
-
-  xorigin = yorigin = zorigin = 0.0;
-
-   TS *ts = Global::GetTS();
-   std::string sopclassuid_used;
-   // D 0002|0002 [UI] [Media Storage SOP Class UID]
-   const std::string &mediastoragesopclassuid_str = GetEntryValue(0x0002,0x0002);
-   const std::string &mediastoragesopclassuid = ts->GetValue(mediastoragesopclassuid_str);
-   //D 0008|0016 [UI] [SOP Class UID]
-   const std::string &sopclassuid_str = GetEntryValue(0x0008,0x0016);
-   const std::string &sopclassuid = ts->GetValue(sopclassuid_str);
-   if ( mediastoragesopclassuid == GDCM_UNFOUND && sopclassuid == GDCM_UNFOUND )
-     {
-     return false;
-     }
-   else
-     {
-     if( mediastoragesopclassuid == sopclassuid )
-       {
-       sopclassuid_used = mediastoragesopclassuid;
-       }
-     else
-       {
-       gdcmWarningMacro( "Inconsistant SOP Class UID: "
-         << mediastoragesopclassuid << " and " << sopclassuid );
-       return false;
-       }
-     }
-   // ok we have now the correct SOP Class UID
-   if( sopclassuid_used == "Enhanced MR Image Storage" )
-     {
-     SeqEntry *PerframeFunctionalGroupsSequence = GetSeqEntry(0x5200,0x9230);
-     unsigned int n = PerframeFunctionalGroupsSequence->GetNumberOfSQItems();
-     if( !n ) return false;
-     SQItem *item1 = PerframeFunctionalGroupsSequence->GetFirstSQItem();
-     DocEntry *p = item1->GetDocEntry(0x0020,0x9113);
-     if( !p ) return false;
-     SeqEntry *seq = dynamic_cast<SeqEntry*>(p);
-     unsigned int n1 = seq->GetNumberOfSQItems();
-     if( !n1 ) return false;
-     SQItem *item2 = seq->GetFirstSQItem();
-     // D 0020|0032 [DS] [Image Position Patient] [3]
-     DocEntry *p2 = item2->GetDocEntry(0x0020,0x0032);
-     if( !p2 ) return false;
-     ContentEntry *entry = dynamic_cast<ContentEntry *>(p2);
-     std::string origin = entry->GetValue();
-      if ( sscanf( origin.c_str(), "%f \\ %f \\%f ",
-          &xorigin, &yorigin, &zorigin) != 3 )
-      {
-         gdcmWarningMacro( "wrong Image Position Patient (0020,0032). "
-                        << "Less than 3 values were found." );
-         return false;
-      }
-     return true;
-     }
-  return false;
-}
-
 /**
  * \brief gets the info from 0020,0032 : Image Position Patient
  *                 else from 0020,0030 : Image Position (RET)
@@ -856,11 +773,6 @@ bool File::GetOriginFromSequence(float &xorigin, float &yorigin, float &zorigin)
 float File::GetYOrigin()
 {
    float xImPos, yImPos, zImPos;
-   if ( GetOriginFromSequence(xImPos, yImPos, zImPos) )
-   {
-   return yImPos;
-   }
-
    std::string strImPos = GetEntryValue(0x0020,0x0032);
 
    if ( strImPos == GDCM_UNFOUND)
@@ -893,11 +805,6 @@ float File::GetYOrigin()
 float File::GetZOrigin()
 {
    float xImPos, yImPos, zImPos;
-   if ( GetOriginFromSequence(xImPos, yImPos, zImPos) )
-   {
-   return zImPos;
-   }
-
    std::string strImPos = GetEntryValue(0x0020,0x0032);
 
    if ( strImPos != GDCM_UNFOUND )
@@ -962,69 +869,6 @@ float File::GetZOrigin()
    return 0.; // Hopeless
 }
 
-// Special case:
-//  ts["1.2.840.10008.5.1.4.1.1.4.1"] = "Enhanced MR Image Storage";
-bool File::GetImageOrientationFromSequence(float io[6])
-{
-   //io is supposed to be float[6]
-   io[0] = io[4] = 1.;
-   io[1] = io[2] = io[3] = io[5] = 0.;
-
-   TS *ts = Global::GetTS();
-   std::string sopclassuid_used;
-   // D 0002|0002 [UI] [Media Storage SOP Class UID]
-   const std::string &mediastoragesopclassuid_str = GetEntryValue(0x0002,0x0002);
-   const std::string &mediastoragesopclassuid = ts->GetValue(mediastoragesopclassuid_str);
-   //D 0008|0016 [UI] [SOP Class UID]
-   const std::string &sopclassuid_str = GetEntryValue(0x0008,0x0016);
-   const std::string &sopclassuid = ts->GetValue(sopclassuid_str);
-   if ( mediastoragesopclassuid == GDCM_UNFOUND && sopclassuid == GDCM_UNFOUND )
-     {
-     return false;
-     }
-   else
-     {
-     if( mediastoragesopclassuid == sopclassuid )
-       {
-       sopclassuid_used = mediastoragesopclassuid;
-       }
-     else
-       {
-       gdcmWarningMacro( "Inconsistant SOP Class UID: "
-         << mediastoragesopclassuid << " and " << sopclassuid );
-       return false;
-       }
-     }
-   // ok we have now the correct SOP Class UID
-   if( sopclassuid_used == "Enhanced MR Image Storage" )
-     {
-     SeqEntry *PerframeFunctionalGroupsSequence = GetSeqEntry(0x5200,0x9230);
-     unsigned int n = PerframeFunctionalGroupsSequence->GetNumberOfSQItems();
-     if( !n ) return false;
-     SQItem *item1 = PerframeFunctionalGroupsSequence->GetFirstSQItem();
-     DocEntry *p = item1->GetDocEntry(0x0020,0x9116);
-     if( !p ) return false;
-     SeqEntry *seq = dynamic_cast<SeqEntry*>(p);
-     unsigned int n1 = seq->GetNumberOfSQItems();
-     if( !n1 ) return false;
-     SQItem *item2 = seq->GetFirstSQItem();
-     // D 0020|0037 [DS] [ImageOrientation] [6]
-     DocEntry *p2 = item2->GetDocEntry(0x0020,0x0037);
-     if( !p2 ) return false;
-     ContentEntry *entry = dynamic_cast<ContentEntry *>(p2);
-     std::string orientation = entry->GetValue();
-      if ( sscanf( orientation.c_str(), "%f \\ %f \\%f \\%f \\%f \\%f ",
-          &io[0], &io[1], &io[2], &io[3], &io[4], &io[5]) != 6 )
-      {
-         gdcmWarningMacro( "wrong Image Orientation Patient (0020,0037). "
-                        << "Less than 6 values were found." );
-         return false;
-      }
-     return true;
-     }
-  return false;
-}
-
 /**
   * \brief gets the info from 0020,0037 : Image Orientation Patient
   *                   or from 0020 0035 : Image Orientation (RET)
@@ -1035,11 +879,6 @@ bool File::GetImageOrientationFromSequence(float io[6])
   */
 bool File::GetImageOrientationPatient( float iop[6] )
 {
-  if ( GetImageOrientationFromSequence(iop) )
-    {
-    return true;
-    }
-
    std::string strImOriPat;
    //iop is supposed to be float[6]
    iop[0] = iop[4] = 1.;
@@ -1326,7 +1165,7 @@ bool File::IsMonochrome1()
 bool File::IsPaletteColor()
 {
    std::string PhotometricInterp = GetEntryValue( 0x0028, 0x0004 );
-   if ( Util::DicomStringEqual(PhotometricInterp, "PALETTE COLOR") )
+   if (   PhotometricInterp == "PALETTE COLOR " )
    {
       return true;
    }
@@ -1366,9 +1205,6 @@ bool File::IsYBRFull()
   */
 bool File::HasLUT()
 {
-   // Some SIEMENS MOSAIC have a RGB LUT but are declared as MONOCHROME2 ...
-   if( !IsPaletteColor() ) return false;
-
    // Check the presence of the LUT Descriptors, and LUT Tables
    // LutDescriptorRed
    if ( !GetDocEntry(0x0028,0x1101) )
@@ -1586,7 +1422,9 @@ int File::GetNumberOfScalarComponents()
       return 3;
    }
 
-   if( IsPaletteColor() )
+   std::string strPhotometricInterpretation = GetEntryValue(0x0028,0x0004);
+
+   if ( Util::DicomStringEqual(strPhotometricInterpretation, "PALETTE COLOR") )
    {
       if ( HasLUT() )// PALETTE COLOR is NOT enough
       {
@@ -1598,7 +1436,6 @@ int File::GetNumberOfScalarComponents()
       }
    }
 
-   std::string strPhotometricInterpretation = GetEntryValue( 0x0028, 0x0004 );
    // beware of trailing space at end of string
    // DICOM tags are never of odd length
    if ( strPhotometricInterpretation == GDCM_UNFOUND   ||
@@ -1876,13 +1713,19 @@ bool File::Write(std::string fileName, FileType writetype)
       e0000->SetValue(sLen.str());
    }
 
-   int i_lgPix = GetEntryLength(GrPixel, NumPixel);
-   if (i_lgPix != -2)
+   // Gorthi: Modified......
+   // If the modality is RTSTRUCT, then that file do not need any
+   // pixel information. So for RTSTRUCT, pixel information is not checked.
+   if ( GetEntryValue( 0x0008, 0x0060 ) != "RTSTRUCT" )
    {
-      // no (GrPixel, NumPixel) element
-      std::string s_lgPix = Util::Format("%d", i_lgPix+12);
-      s_lgPix = Util::DicomString( s_lgPix.c_str() );
-      InsertValEntry(s_lgPix,GrPixel, 0x0000);
+     int i_lgPix = GetEntryLength(GrPixel, NumPixel);
+     if (i_lgPix != -2)
+     {
+        // no (GrPixel, NumPixel) element
+        std::string s_lgPix = Util::Format("%d", i_lgPix+12);
+        s_lgPix = Util::DicomString( s_lgPix.c_str() );
+        InsertValEntry(s_lgPix,GrPixel, 0x0000);
+     }
    }
    Document::WriteContent(fp, writetype);
 

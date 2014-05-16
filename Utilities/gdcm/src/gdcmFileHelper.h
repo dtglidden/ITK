@@ -1,10 +1,10 @@
 /*=========================================================================
 
   Program:   gdcm
-  Module:    gdcmFileHelper.h
+  Module:    $RCSfile: gdcmFileHelper.h,v $
   Language:  C++
-  Date:      $Date$
-  Version:   $Revision$
+  Date:
+  Version:
 
   Copyright (c) CREATIS (Centre de Recherche et d'Applications en Traitement de
   l'Image). All rights reserved. See Doc/License.txt or
@@ -180,7 +180,17 @@ protected:
    ValEntry *CopyValEntry(uint16_t group, uint16_t elem);
    BinEntry *CopyBinEntry(uint16_t group, uint16_t elem,
                           const std::string &vr);
+
    void CheckMandatoryElements();
+
+   // --------------------------------------
+   // Gorthi
+   // Added the following function
+   // --------------------------------------
+   void CheckRTSTRUCTMandatoryElements();
+   // --------------------------------------
+
+
    void CheckMandatoryEntry(uint16_t group, uint16_t elem,std::string value);
    void CopyMandatoryEntry(uint16_t group, uint16_t elem,std::string value);
    void RestoreWriteMandatory();

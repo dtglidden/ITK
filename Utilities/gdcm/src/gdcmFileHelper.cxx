@@ -1,11 +1,11 @@
 /*=========================================================================
 
   Program:   gdcm
-  Module:    gdcmFileHelper.cxx
+  Module:    $RCSfile: gdcmFileHelper.cxx,v $
   Language:  C++
 
-  Date:      $Date$
-  Version:   $Revision$
+  Date:
+  Version:
 
   Copyright (c) CREATIS (Centre de Recherche et d'Applications en Traitement de
   l'Image). All rights reserved. See Doc/License.txt or
@@ -396,7 +396,7 @@ uint8_t *FileHelper::GetImageData()
       return 0;
    }
 
-   if ( (FileInternal->IsPaletteColor() && FileInternal->HasLUT()) && PixelReadConverter->BuildRGBImage() )
+   if ( FileInternal->HasLUT() && PixelReadConverter->BuildRGBImage() )
    {
       return PixelReadConverter->GetRGB();
    }
@@ -458,7 +458,7 @@ size_t FileHelper::GetImageDataIntoVector (void *destination, size_t maxSize)
       return 0;
    }
 
-   if ( (FileInternal->IsPaletteColor() && FileInternal->HasLUT()) && PixelReadConverter->BuildRGBImage() )
+   if ( FileInternal->HasLUT() && PixelReadConverter->BuildRGBImage() )
    {
       if ( PixelReadConverter->GetRGBSize() > maxSize )
       {
@@ -707,6 +707,8 @@ bool FileHelper::WriteAcr (std::string const &fileName)
  */
 bool FileHelper::Write(std::string const &fileName)
 {
+  if (FileInternal->GetEntryValue(0x0008, 0x0060) != "RTSTRUCT")
+  {
    switch(WriteType)
    {
       case ImplicitVR:
@@ -787,6 +789,20 @@ bool FileHelper::Write(std::string const &fileName)
    // ----------------- End of Special Patch ----------------
 
    return check;
+  } else {
+  SetWriteFileTypeToExplicitVR();
+  CheckRTSTRUCTMandatoryElements();
+  SetWriteToNoLibido();
+  bool check = FileInternal->Write(fileName,WriteType);
+
+  RestoreWrite();
+  RestoreWriteFileType();
+  RestoreWriteMandatory();
+  RestoreWriteOfLibido();
+
+  // return check;
+  return true;
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -892,7 +908,7 @@ void FileHelper::SetWriteToRaw()
    else
    {
       ValEntry *photInt = CopyValEntry(0x0028,0x0004);
-      if (FileInternal->IsPaletteColor() && FileInternal->HasLUT() )
+      if (FileInternal->HasLUT() )
       {
          photInt->SetValue("PALETTE COLOR ");
       }
@@ -1012,6 +1028,9 @@ void FileHelper::SetWriteToRGB()
  */
 void FileHelper::RestoreWrite()
 {
+   // XXX GORTHI included the if condition
+   if (FileInternal->GetEntryValue(0x0008, 0x0060) != "RTSTRUCT")
+   {
    Archive->Restore(0x0028,0x0002);
    Archive->Restore(0x0028,0x0004);
    Archive->Restore(0x0028,0x0006);
@@ -1032,7 +1051,7 @@ void FileHelper::RestoreWrite()
 
    // For the Palette Color Lookup Table UID
    Archive->Restore(0x0028,0x1203);
-
+   }
 
    // group 0002 may be pushed out for ACR-NEMA writting purposes
    Archive->Restore(0x0002,0x0000);
@@ -1187,6 +1206,9 @@ void FileHelper::SetWriteToNoLibido()
  */
 void FileHelper::RestoreWriteOfLibido()
 {
+   // Gorthi included the if condition
+   if (FileInternal->GetEntryValue(0x0008, 0x0060) != "RTSTRUCT")
+   {
    Archive->Restore(0x0028,0x0010);
    Archive->Restore(0x0028,0x0011);
    Archive->Restore(0x0008,0x0010);
@@ -1196,6 +1218,7 @@ void FileHelper::RestoreWriteOfLibido()
    Archive->Restore(0x0028,0x0016);
    Archive->Restore(0x0028,0x0017);
    Archive->Restore(0x0028,0x00199);
+   }
 }
 
 /**
@@ -1479,11 +1502,10 @@ void FileHelper::CheckMandatoryElements()
 
    // 'Media Storage SOP Instance UID'
    CopyMandatoryEntry(0x0002,0x0003,sop);
-   CheckMandatoryEntry(0x0008,0x0018,sop);
 
    // 'Implementation Class UID'
    // $ echo "gdcm" | od -b
-   CopyMandatoryEntry(0x0002,0x0012, Util::GetRootUID() + ".147.144.143.155." GDCM_VERSION);
+   CopyMandatoryEntry(0x0002,0x0012,"147.144.143.155");
 
    // 'Implementation Version Name'
    std::string version = "ITK/GDCM ";
@@ -1636,7 +1658,7 @@ void FileHelper::CheckMandatoryElements()
                 os2 << *it;
                 }
               }
-            imagetype = os2.str();
+            imagetype = os.str();
             }
           }
         }
@@ -1650,6 +1672,12 @@ void FileHelper::CheckMandatoryElements()
        e_0008_0016  =  new ValEntry(
          Global::GetDicts()->GetDefaultPubDict()->GetEntry(0x0008, 0x0016) );
        e_0008_0016 ->SetValue( e_0002_0002->GetValue() );
+       ValEntry *e_0008_0018 = FileInternal->GetValEntry(0x0008, 0x0018);
+       if( e_0008_0018 )
+         {
+         e_0008_0018->SetValue(
+           FileInternal->GetValEntry(0x0002,0x0003)->GetValue() );
+         }
        Archive->Push(e_0008_0016);
        }
      else
@@ -1673,6 +1701,7 @@ void FileHelper::CheckMandatoryElements()
    //      Global::GetDicts()->GetDefaultPubDict()->GetEntry(0x0008, 0x0018) );
    //e_0008_0018->SetValue( Util::CreateUniqueUID() );
    //Archive->Push(e_0008_0018);
+   CheckMandatoryEntry(0x0008,0x0018,sop);
 
    // Instance Creation Date
    const std::string &date = Util::GetCurrentDate();
@@ -1763,6 +1792,234 @@ void FileHelper::CheckMandatoryElements()
    CheckMandatoryEntry(0x0008,0x0090,"");
 
 }
+
+
+//=======================================================
+//Gorthi
+//=======================================================
+void FileHelper::CheckRTSTRUCTMandatoryElements()
+{
+    std::string sop =  Util::CreateUniqueUID();
+
+   // just to remember : 'official' 0002 group
+   if ( WriteType != ACR && WriteType != ACR_LIBIDO )
+   {
+     // Group 000002 (Meta Elements) already pushed out
+
+   //0002 0000 UL 1 Meta Group Length
+   //0002 0001 OB 1 File Meta Information Version
+   //0002 0002 UI 1 Media Storage SOP Class UID
+   //0002 0003 UI 1 Media Storage SOP Instance UID
+   //0002 0010 UI 1 Transfer Syntax UID
+   //0002 0012 UI 1 Implementation Class UID
+   //0002 0013 SH 1 Implementation Version Name
+   //0002 0016 AE 1 Source Application Entity Title
+   //0002 0100 UI 1 Private Information Creator
+   //0002 0102 OB 1 Private Information
+
+   // Push out 'ACR-NEMA-special' entries, if any
+   Archive->Push(0x0008,0x0001); // Length to End
+   Archive->Push(0x0008,0x0010); // Recognition Code
+   Archive->Push(0x0028,0x0005); // Image Dimension
+
+   // Create them if not found
+   // Always modify the value
+   // Push the entries to the archive.
+      CopyMandatoryEntry(0x0002,0x0000,"0");
+
+      BinEntry *e_0002_0001 = CopyBinEntry(0x0002,0x0001, "OB");
+      e_0002_0001->SetBinArea(const_cast<uint8_t*>(Util::GetFileMetaInformationVersion()),
+                               false);
+      e_0002_0001->SetLength(2);
+      Archive->Push(e_0002_0001);
+
+   // 'Media Storage SOP Class UID'  --> [RTSTRUCTURE Set Storage Class]
+   // Standard SOP Class UID for RTSTRUCTURE Set = "1.2.840.10008.5.1.4.1.1.481.3"
+   ValEntry *e_0002_0002 = FileInternal->GetValEntry(0x0002, 0x0002);
+   if( !e_0002_0002)
+     {
+     CopyMandatoryEntry(0x0002,0x0002,"1.2.840.10008.5.1.4.1.1.481.3");
+     }
+
+   // 'Media Storage SOP Instance UID'
+   CopyMandatoryEntry(0x0002,0x0003,sop);
+
+   // 'Implementation Class UID'
+      CopyMandatoryEntry(0x0002,0x0012,Util::CreateUniqueUID());
+
+   // 'Implementation Version Name'
+      std::string version = "ITK/GDCM ";
+      version += Util::GetVersion();
+      CopyMandatoryEntry(0x0002,0x0013,version);
+   }
+
+   // Push out 'LibIDO-special' entries, if any
+   Archive->Push(0x0028,0x0015);
+   Archive->Push(0x0028,0x0016);
+   Archive->Push(0x0028,0x0017);
+   Archive->Push(0x0028,0x00199);
+
+   // Deal with the pb of (Bits Stored = 12)
+   // - we're gonna write the image as Bits Stored = 16
+   if ( FileInternal->GetEntryValue(0x0028,0x0100) ==  "12")
+   {
+      CopyMandatoryEntry(0x0028,0x0100,"16");
+   }
+
+
+
+   // --- Check UID-related Entries ---
+
+   // If 'SOP Class UID' exists ('true DICOM' image)
+   // we create the 'Source Image Sequence' SeqEntry
+   // to hold informations about the Source Image
+
+   ValEntry *e_0008_0016 = FileInternal->GetValEntry(0x0008, 0x0016);
+   if ( e_0008_0016 )
+   {
+      // Create 'Source Image Sequence' SeqEntry
+      SeqEntry *sis = new SeqEntry (
+            Global::GetDicts()->GetDefaultPubDict()->GetEntry(0x0008, 0x2112) );
+      SQItem *sqi = new SQItem(1);
+      // (we assume 'SOP Instance UID' exists too)
+      // create 'Referenced SOP Class UID'
+      ValEntry *e_0008_1150 = new ValEntry(
+            Global::GetDicts()->GetDefaultPubDict()->GetEntry(0x0008, 0x1150) );
+      e_0008_1150->SetValue( e_0008_0016->GetValue());
+      sqi->AddEntry(e_0008_1150);
+
+      // create 'Referenced SOP Instance UID'
+      ValEntry *e_0008_0018 = FileInternal->GetValEntry(0x0008, 0x0018);
+      ValEntry *e_0008_1155 = new ValEntry(
+            Global::GetDicts()->GetDefaultPubDict()->GetEntry(0x0008, 0x1155) );
+      e_0008_1155->SetValue( e_0008_0018->GetValue());
+      sqi->AddEntry(e_0008_1155);
+
+      sis->AddSQItem(sqi,1);
+      // temporarily replaces any previous 'Source Image Sequence'
+      Archive->Push(sis);
+
+      // 'Image Type' (The written image is no longer an 'ORIGINAL' one)
+      CopyMandatoryEntry(0x0008,0x0008,"DERIVED\\PRIMARY");
+   }
+   else
+   {
+     ValEntry *e_0002_0002 = FileInternal->GetValEntry(0x0002, 0x0002);
+     if( e_0002_0002 )
+       {
+       e_0008_0016  =  new ValEntry(
+         Global::GetDicts()->GetDefaultPubDict()->GetEntry(0x0008, 0x0016) );
+       e_0008_0016 ->SetValue( e_0002_0002->GetValue() );
+       ValEntry *e_0008_0018 = FileInternal->GetValEntry(0x0008, 0x0018);
+       e_0008_0018->SetValue(
+         FileInternal->GetValEntry(0x0002,0x0003)->GetValue() );
+       Archive->Push(e_0008_0016);
+       }
+     else
+       {
+       // There was no 'SOP Class UID' nor 'Media Storage SOP UID'
+       // the source image was NOT a true Dicom one.
+       // We consider the image is a 'Secondary Capture' one
+       // SOP Class UID
+       e_0008_0016  =  new ValEntry(
+         Global::GetDicts()->GetDefaultPubDict()->GetEntry(0x0008, 0x0016) );
+       // [Secondary Capture Image Storage]
+       e_0008_0016 ->SetValue("1.2.840.10008.5.1.4.1.1.7");
+       Archive->Push(e_0008_0016);
+       }
+   }
+
+   // ---- The user will never have to take any action on the following ----
+
+   // new value for 'SOP Instance UID'
+   //ValEntry *e_0008_0018 = new ValEntry(
+   //      Global::GetDicts()->GetDefaultPubDict()->GetEntry(0x0008, 0x0018) );
+   //e_0008_0018->SetValue( Util::CreateUniqueUID() );
+   //Archive->Push(e_0008_0018);
+   CheckMandatoryEntry(0x0008,0x0018,sop);
+
+   // Instance Creation Date
+   const std::string &date = Util::GetCurrentDate();
+   CopyMandatoryEntry(0x0008,0x0012,date);
+   //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   //Added  Structure Set Date
+   CopyMandatoryEntry(0x3006, 0x0008, date);
+   //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+   // Instance Creation Time
+   const std::string &time = Util::GetCurrentTime();
+   CopyMandatoryEntry(0x0008,0x0013,time);
+   //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   //Added Structure Set Time
+   CopyMandatoryEntry(0x3006, 0x0009, time);
+   //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+   // Study Date
+   CheckMandatoryEntry(0x0008,0x0020,date);
+   // Study Time
+   CheckMandatoryEntry(0x0008,0x0030,time);
+
+   // Accession Number
+   //CopyMandatoryEntry(0x0008,0x0050,"");
+   CheckMandatoryEntry(0x0008,0x0050,"");
+
+
+   // ----- Add Mandatory Entries if missing ---
+   // Entries whose type is 1 are mandatory, with a mandatory value
+   // Entries whose type is 1c are mandatory-inside-a-Sequence,
+   //                          with a mandatory value
+   // Entries whose type is 2 are mandatory, with an optional value
+   // Entries whose type is 2c are mandatory-inside-a-Sequence,
+   //                          with an optional value
+   // Entries whose type is 3 are optional
+
+   // 'Study Instance UID'
+   // Keep the value if exists
+   // The user is allowed to create his own Study,
+   //          keeping the same 'Study Instance UID' for various images
+   // The user may add images to a 'Manufacturer Study',
+   //          adding new Series to an already existing Study
+   CheckMandatoryEntry(0x0020,0x000d,Util::CreateUniqueUID());
+
+
+
+
+   // 'Serie Instance UID'
+   // Keep the value if exists
+   // The user is allowed to create his own Series,
+   // keeping the same 'Serie Instance UID' for various images
+   // The user shouldn't add any image to a 'Manufacturer Serie'
+   // but there is no way no to prevent him for doing that
+   CheckMandatoryEntry(0x0020,0x000e,Util::CreateUniqueUID());
+
+   // Study ID
+   CopyMandatoryEntry(0x0020, 0x0010, "");
+
+   // Series Number
+   CopyMandatoryEntry(0x0020, 0x0011, "");
+
+   // Modality : if missing we set it to 'OTher'
+   CheckMandatoryEntry(0x0008,0x0060,"OT");
+
+   // Manufacturer : if missing we set it to 'GDCM Factory'
+   CheckMandatoryEntry(0x0008,0x0070,"GDCM Factory");
+
+   // Patient's Name : if missing, we set it to 'GDCM^Patient'
+   CheckMandatoryEntry(0x0010,0x0010,"GDCM^Patient");
+
+    // Patient ID : 'type 2' entry but some DICOM implementation really needs it.
+   CheckMandatoryEntry(0x0010,0x0020,"GDCM ID");
+
+   // Patient's Birth Date : 'type 2' entry -> must exist, value not mandatory
+   CheckMandatoryEntry(0x0010,0x0030,"");
+
+   // Patient's Sex :'type 2' entry -> must exist, value not mandatory
+   CheckMandatoryEntry(0x0010,0x0040,"");
+
+   // Referring Physician's Name :'type 2' entry -> must exist, value not mandatory
+   CheckMandatoryEntry(0x0008,0x0090,"");
+}
+//=======================================================
 
 void FileHelper::CheckMandatoryEntry(uint16_t group,uint16_t elem,std::string value)
 {
