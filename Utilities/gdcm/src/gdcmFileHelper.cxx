@@ -1,20 +1,20 @@
 /*=========================================================================
-                                                                                
+
   Program:   gdcm
   Module:    gdcmFileHelper.cxx
   Language:  C++
 
   Date:      $Date$
   Version:   $Revision$
-                                                                                
+
   Copyright (c) CREATIS (Centre de Recherche et d'Applications en Traitement de
   l'Image). All rights reserved. See Doc/License.txt or
   http://www.creatis.insa-lyon.fr/Public/Gdcm/License.html for details.
-                                                                                
+
      This software is distributed WITHOUT ANY WARRANTY; without even
      the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
      PURPOSE.  See the above copyright notices for more information.
-                                                                                
+
 =========================================================================*/
 
 #include "gdcmFileHelper.h"
@@ -36,7 +36,7 @@
 #include "gdcmOrientation.h"
 #if defined(__BORLANDC__)
    #include <mem.h> // for memset
-#endif 
+#endif
 
 #include <fstream>
 
@@ -51,7 +51,7 @@ gdcm::File *f = new gdcm::File(fileName);
 // user may also decide he doesn't want to load some parts of the header
 gdcm::File *f = new gdcm::File();
 f->SetFileName(fileName);
-   f->SetLoadMode(LD_NOSEQ);             // or      
+   f->SetLoadMode(LD_NOSEQ);             // or
    f->SetLoadMode(LD_NOSHADOW);          // or
    f->SetLoadMode(LD_NOSEQ | LD_NOSHADOW); // or
    f->SetLoadMode(LD_NOSHADOWSEQ);
@@ -73,7 +73,7 @@ To re-write the image, user re-uses the gdcm::FileHelper
 fh->SetImageData( userPixels, userPixelsLength);
 fh->SetTypeToRaw(); // Even if it was possible to convert Palette to RGB
                      // (WriteMode is set)
- 
+
 fh->SetWriteTypeToDcmExpl(); // he wants Explicit Value Representation
                               // Little Endian is the default
                               // no other value is allowed
@@ -96,8 +96,8 @@ fh1->Write(newFileName);
    SetWriteFileTypeToImplicitVR() / SetWriteFileTypeToExplicitVR();
    (modifies TransferSyntax)
    SetWriteToRaw(); / SetWriteToRGB();
-      (modifies, when necessary : photochromatic interpretation, 
-         samples per pixel, Planar configuration, 
+      (modifies, when necessary : photochromatic interpretation,
+         samples per pixel, Planar configuration,
          bits allocated, bits stored, high bit -ACR 24 bits-
          Pixels element VR, pushes out the LUT )
    CheckWriteIntegrity();
@@ -117,7 +117,7 @@ fh1->Write(newFileName);
 
 
 
-namespace gdcm 
+namespace gdcm
 {
 //-------------------------------------------------------------------------
 // Constructor / Destructor
@@ -132,10 +132,10 @@ namespace gdcm
  *        the DICOM header is post-poned to first header information access.
  *        This avoid a double parsing of public part of the header when
  *        one sets an a posteriori shadow dictionary (efficiency can be
- *        seen as a side effect).   
+ *        seen as a side effect).
  */
 FileHelper::FileHelper( )
-{ 
+{
    FileInternal = new File( );
    SelfHeader = true;
    Initialize();
@@ -152,7 +152,7 @@ FileHelper::FileHelper( )
  *        the DICOM header is post-poned to first header information access.
  *        This avoid a double parsing of public part of the header when
  *        user sets an a posteriori shadow dictionary (efficiency can be
- *        seen as a side effect).   
+ *        seen as a side effect).
  * @param header already built Header
  */
 FileHelper::FileHelper(File *header)
@@ -178,7 +178,7 @@ FileHelper::FileHelper(File *header)
  *        the DICOM header is post-poned to first header information access.
  *        This avoid a double parsing of public part of the header when
  *        one sets an a posteriori shadow dictionary (efficiency can be
- *        seen as a side effect).   
+ *        seen as a side effect).
  * @param filename file to be opened for parsing
  * @deprecated  use SetFilename() + Load() methods
  */
@@ -202,7 +202,7 @@ FileHelper::FileHelper(std::string const &filename )
  *        it is destroyed by the FileHelper
  */
 FileHelper::~FileHelper()
-{ 
+{
    if ( PixelReadConverter )
    {
       delete PixelReadConverter;
@@ -227,20 +227,20 @@ FileHelper::~FileHelper()
 // Public
 
 /**
- * \brief Sets the LoadMode of the internal gdcm::File as a boolean string. 
+ * \brief Sets the LoadMode of the internal gdcm::File as a boolean string.
  *        NO_SEQ, NO_SHADOW, NO_SHADOWSEQ ... (nothing more, right now)
  *        WARNING : before using NO_SHADOW, be sure *all* your files
- *        contain accurate values in the 0x0000 element (if any) 
+ *        contain accurate values in the 0x0000 element (if any)
  *        of *each* Shadow Group. The parser will fail if the size is wrong !
- * @param   loadMode Load mode to be used    
+ * @param   loadMode Load mode to be used
  */
-void FileHelper::SetLoadMode(int loadMode) 
-{ 
-   GetFile()->SetLoadMode( loadMode ); 
+void FileHelper::SetLoadMode(int loadMode)
+{
+   GetFile()->SetLoadMode( loadMode );
 }
 /**
  * \brief Sets the LoadMode of the internal gdcm::File
- * @param  fileName name of the file to be open  
+ * @param  fileName name of the file to be open
  */
 void FileHelper::SetFileName(std::string const &fileName)
 {
@@ -248,12 +248,12 @@ void FileHelper::SetFileName(std::string const &fileName)
 }
 
 /**
- * \brief   Loader  
+ * \brief   Loader
  * @return false if file cannot be open or no swap info was found,
  *         or no tag was found.
  */
 bool FileHelper::Load()
-{ 
+{
    if ( !FileInternal->Load() )
       return false;
 
@@ -272,7 +272,7 @@ bool FileHelper::Load()
  */
 bool FileHelper::SetValEntry(std::string const &content,
                              uint16_t group, uint16_t elem)
-{ 
+{
    return FileInternal->SetValEntry(content, group, elem);
 }
 
@@ -297,11 +297,11 @@ bool FileHelper::SetBinEntry(uint8_t *content, int lgth,
  * \brief   Modifies the value of a given DocEntry (Dicom entry)
  *          when it exists. Creates it with the given value when unexistant.
  * @param   content (string)value to be set
- * @param   group   Group number of the Entry 
+ * @param   group   Group number of the Entry
  * @param   elem  Element number of the Entry
  * \return  pointer to the modified/created Dicom entry (NULL when creation
  *          failed).
- */ 
+ */
 ValEntry *FileHelper::InsertValEntry(std::string const &content,
                                      uint16_t group, uint16_t elem)
 {
@@ -314,7 +314,7 @@ ValEntry *FileHelper::InsertValEntry(std::string const &content,
  *          A copy of the binArea is made to be kept in the Document.
  * @param   binArea (binary)value to be set
  * @param   lgth new value length
- * @param   group   Group number of the Entry 
+ * @param   group   Group number of the Entry
  * @param   elem  Element number of the Entry
  * \return  pointer to the modified/created Dicom entry (NULL when creation
  *          failed).
@@ -326,9 +326,9 @@ BinEntry *FileHelper::InsertBinEntry(uint8_t *binArea, int lgth,
 }
 
 /**
- * \brief   Adds an empty SeqEntry 
+ * \brief   Adds an empty SeqEntry
  *          (remove any existing entry with same group,elem)
- * @param   group   Group number of the Entry 
+ * @param   group   Group number of the Entry
  * @param   elem  Element number of the Entry
  * \return  pointer to the created SeqEntry (NULL when creation
  *          failed).
@@ -340,7 +340,7 @@ SeqEntry *FileHelper::InsertSeqEntry(uint16_t group, uint16_t elem)
 
 /**
  * \brief   Get the size of the image data
- *          If the image can be RGB (with a lut or by default), the size 
+ *          If the image can be RGB (with a lut or by default), the size
  *          corresponds to the RGB image
  *         (use GetImageDataRawSize if you want to be sure to get *only*
  *          the size of the pixels)
@@ -357,7 +357,7 @@ size_t FileHelper::GetImageDataSize()
 
 /**
  * \brief   Get the size of the image data.
- *          If the image could be converted to RGB using a LUT, 
+ *          If the image could be converted to RGB using a LUT,
  *          this transformation is not taken into account by GetImageDataRawSize
  *          (use GetImageDataSize if you wish)
  * @return  The raw image size
@@ -372,7 +372,7 @@ size_t FileHelper::GetImageDataRawSize()
 }
 
 /**
- * \brief brings pixels into memory :  
+ * \brief brings pixels into memory :
  *          - Allocates necessary memory,
  *          - Reads the pixels from disk (uncompress if necessary),
  *          - Transforms YBR pixels, if any, into RGB pixels,
@@ -381,7 +381,7 @@ size_t FileHelper::GetImageDataRawSize()
  *          - Copies the pixel data (image[s]/volume[s]) to newly allocated zone.
  * @return  Pointer to newly allocated pixel data.
  *          (uint8_t is just for prototyping. feel free to cast)
- *          NULL if alloc fails 
+ *          NULL if alloc fails
  */
 uint8_t *FileHelper::GetImageData()
 {
@@ -408,11 +408,11 @@ uint8_t *FileHelper::GetImageData()
 }
 
 /**
- * \brief brings pixels into memory :  
- *          - Allocates necessary memory, 
+ * \brief brings pixels into memory :
+ *          - Allocates necessary memory,
  *          - Transforms YBR pixels (if any) into RGB pixels
  *          - Transforms 3 planes R, G, B  (if any) into a single RGB Plane
- *          - Copies the pixel data (image[s]/volume[s]) to newly allocated zone. 
+ *          - Copies the pixel data (image[s]/volume[s]) to newly allocated zone.
  *          - DOES NOT transform Grey plane + 3 Palettes into a RGB Plane
  * @return  Pointer to newly allocated pixel data.
  *          (uint8_t is just for prototyping. feel free to cast)
@@ -425,23 +425,23 @@ uint8_t *FileHelper::GetImageDataRaw ()
 
 #ifndef GDCM_LEGACY_REMOVE
 /*
- * \brief   Useless function, since PixelReadConverter forces us 
- *          copy the Pixels anyway.  
+ * \brief   Useless function, since PixelReadConverter forces us
+ *          copy the Pixels anyway.
  *          Reads the pixels from disk (uncompress if necessary),
  *          Transforms YBR pixels, if any, into RGB pixels
  *          Transforms 3 planes R, G, B, if any, into a single RGB Plane
- *          Transforms single Grey plane + 3 Palettes into a RGB Plane   
+ *          Transforms single Grey plane + 3 Palettes into a RGB Plane
  *          Copies at most MaxSize bytes of pixel data to caller allocated
  *          memory space.
  * \warning This function allows people that want to build a volume
- *          from an image stack *not to* have, first to get the image pixels, 
+ *          from an image stack *not to* have, first to get the image pixels,
  *          and then move them to the volume area.
- *          It's absolutely useless for any VTK user since vtk chooses 
+ *          It's absolutely useless for any VTK user since vtk chooses
  *          to invert the lines of an image, that is the last line comes first
- *          (for some axis related reasons?). Hence he will have 
+ *          (for some axis related reasons?). Hence he will have
  *          to load the image line by line, starting from the end.
  *          VTK users have to call GetImageData
- *     
+ *
  * @param   destination Address (in caller's memory space) at which the
  *          pixel data should be copied
  * @param   maxSize Maximum number of bytes to be copied. When MaxSize
@@ -488,13 +488,13 @@ size_t FileHelper::GetImageDataIntoVector (void *destination, size_t maxSize)
  * \brief   Points the internal pointer to the callers inData
  *          image representation, BUT WITHOUT COPYING THE DATA.
  *          'image' Pixels are presented as C-like 2D arrays : line per line.
- *          'volume'Pixels are presented as C-like 3D arrays : plane per plane 
+ *          'volume'Pixels are presented as C-like 3D arrays : plane per plane
  * \warning Since the pixels are not copied, it is the caller's responsability
  *          not to deallocate its data before gdcm uses them (e.g. with
  *          the Write() method )
  * @param inData user supplied pixel area (uint8_t* is just for the compiler.
  *               user is allowed to pass any kind of pixelsn since the size is
- *               given in bytes) 
+ *               given in bytes)
  * @param expectedSize total image size, *in Bytes*
  */
 void FileHelper::SetImageData(uint8_t *inData, size_t expectedSize)
@@ -508,8 +508,8 @@ void FileHelper::SetImageData(uint8_t *inData, size_t expectedSize)
  * \warning When writting the file, this data are get as default data to write
  * @param inData user supplied pixel area (uint8_t* is just for the compiler.
  *               user is allowed to pass any kind of pixels since the size is
- *               given in bytes) 
- * @param expectedSize total image size, *in Bytes* 
+ *               given in bytes)
+ * @param expectedSize total image size, *in Bytes*
  */
 void FileHelper::SetUserData(uint8_t *inData, size_t expectedSize)
 {
@@ -626,17 +626,17 @@ bool FileHelper::WriteRawData(std::string const &fileName)
 
    if ( PixelWriteConverter->GetUserData() )
    {
-      fp1.write( (char *)PixelWriteConverter->GetUserData(), 
+      fp1.write( (char *)PixelWriteConverter->GetUserData(),
                  PixelWriteConverter->GetUserDataSize() );
    }
    else if ( PixelReadConverter->GetRGB() )
    {
-      fp1.write( (char *)PixelReadConverter->GetRGB(), 
+      fp1.write( (char *)PixelReadConverter->GetRGB(),
                  PixelReadConverter->GetRGBSize());
    }
    else if ( PixelReadConverter->GetRaw() )
    {
-      fp1.write( (char *)PixelReadConverter->GetRaw(), 
+      fp1.write( (char *)PixelReadConverter->GetRaw(),
                  PixelReadConverter->GetRawSize());
    }
    else
@@ -650,7 +650,7 @@ bool FileHelper::WriteRawData(std::string const &fileName)
 }
 
 /**
- * \brief Writes on disk A SINGLE Dicom file, 
+ * \brief Writes on disk A SINGLE Dicom file,
  *        using the Implicit Value Representation convention
  *        NO test is performed on  processor "Endianity".
  * @param fileName name of the file to be created
@@ -665,9 +665,9 @@ bool FileHelper::WriteDcmImplVR (std::string const &fileName)
 }
 
 /**
-* \brief Writes on disk A SINGLE Dicom file, 
+* \brief Writes on disk A SINGLE Dicom file,
  *        using the Explicit Value Representation convention
- *        NO test is performed on  processor "Endiannity". 
+ *        NO test is performed on  processor "Endiannity".
  * @param fileName name of the file to be created
  *                 (any already existing file is overwritten)
  * @return false if write fails
@@ -680,10 +680,10 @@ bool FileHelper::WriteDcmExplVR (std::string const &fileName)
 }
 
 /**
- * \brief Writes on disk A SINGLE Dicom file, 
+ * \brief Writes on disk A SINGLE Dicom file,
  *        using the ACR-NEMA convention
  *        NO test is performed on  processor "Endiannity".
- *        (a l'attention des logiciels cliniques 
+ *        (a l'attention des logiciels cliniques
  *        qui ne prennent en entrée QUE des images ACR ...
  * \warning if a DICOM_V3 header is supplied,
  *         groups < 0x0008 and shadow groups are ignored
@@ -700,7 +700,7 @@ bool FileHelper::WriteAcr (std::string const &fileName)
 }
 
 /**
- * \brief Writes on disk A SINGLE Dicom file, 
+ * \brief Writes on disk A SINGLE Dicom file,
  * @param fileName name of the file to be created
  *                 (any already existing file is overwritten)
  * @return false if write fails
@@ -746,7 +746,7 @@ bool FileHelper::Write(std::string const &fileName)
    // just before writting ...
    /// \todo the best trick would be *change* the recognition code
    ///       but pb expected if user deals with, e.g. COMPLEX images
-   
+
    if ( WriteType == ACR_LIBIDO )
    {
       SetWriteToLibido();
@@ -756,7 +756,7 @@ bool FileHelper::Write(std::string const &fileName)
       SetWriteToNoLibido();
    }
    // ----------------- End of Special Patch ----------------
-  
+
    switch(WriteMode)
    {
       case WMODE_RAW :
@@ -780,8 +780,8 @@ bool FileHelper::Write(std::string const &fileName)
 
    // --------------------------------------------------------------
    // Special Patch to allow gdcm to re-write ACR-LibIDO formated images
-   // 
-   // ...and we restore the header to be Dicom Compliant again 
+   //
+   // ...and we restore the header to be Dicom Compliant again
    // just after writting
    RestoreWriteOfLibido();
    // ----------------- End of Special Patch ----------------
@@ -806,14 +806,14 @@ bool FileHelper::CheckWriteIntegrity()
       int numberBitsAllocated = FileInternal->GetBitsAllocated();
       if ( numberBitsAllocated == 0 || numberBitsAllocated == 12 )
       {
-         gdcmWarningMacro( "numberBitsAllocated changed from " 
-                          << numberBitsAllocated << " to 16 " 
+         gdcmWarningMacro( "numberBitsAllocated changed from "
+                          << numberBitsAllocated << " to 16 "
                           << " for consistency purpose" );
          numberBitsAllocated = 16;
       }
 
       size_t decSize = FileInternal->GetXSize()
-                     * FileInternal->GetYSize() 
+                     * FileInternal->GetYSize()
                      * FileInternal->GetZSize()
                      * FileInternal->GetSamplesPerPixel()
                      * ( numberBitsAllocated / 8 );
@@ -826,8 +826,8 @@ bool FileHelper::CheckWriteIntegrity()
          case WMODE_RAW :
             if ( decSize!=PixelWriteConverter->GetUserDataSize() )
             {
-               gdcmWarningMacro( "Data size (Raw) is incorrect. Should be " 
-                           << decSize << " / Found :" 
+               gdcmWarningMacro( "Data size (Raw) is incorrect. Should be "
+                           << decSize << " / Found :"
                            << PixelWriteConverter->GetUserDataSize() );
                return false;
             }
@@ -835,8 +835,8 @@ bool FileHelper::CheckWriteIntegrity()
          case WMODE_RGB :
             if ( rgbSize!=PixelWriteConverter->GetUserDataSize() )
             {
-               gdcmWarningMacro( "Data size (RGB) is incorrect. Should be " 
-                          << decSize << " / Found " 
+               gdcmWarningMacro( "Data size (RGB) is incorrect. Should be "
+                          << decSize << " / Found "
                           << PixelWriteConverter->GetUserDataSize() );
                return false;
             }
@@ -852,14 +852,14 @@ size_t FileHelper::ComputeExpectedImageDataSize()
   int numberBitsAllocated = FileInternal->GetBitsAllocated();
   if ( numberBitsAllocated == 0 || numberBitsAllocated == 12 )
     {
-    gdcmWarningMacro( "numberBitsAllocated changed from " 
-      << numberBitsAllocated << " to 16 " 
+    gdcmWarningMacro( "numberBitsAllocated changed from "
+      << numberBitsAllocated << " to 16 "
       << " for consistency purpose" );
     numberBitsAllocated = 16;
     }
 
   size_t decSize = FileInternal->GetXSize()
-    * FileInternal->GetYSize() 
+    * FileInternal->GetYSize()
     * FileInternal->GetZSize()
     * FileInternal->GetSamplesPerPixel()
     * ( numberBitsAllocated / 8 );
@@ -879,16 +879,16 @@ size_t FileHelper::ComputeExpectedImageDataSize()
 
 /**
  * \brief Updates the File to write RAW data (as opposed to RGB data)
- *       (modifies, when necessary, photochromatic interpretation, 
+ *       (modifies, when necessary, photochromatic interpretation,
  *       bits allocated, Pixels element VR)
- */ 
+ */
 void FileHelper::SetWriteToRaw()
 {
-   if ( FileInternal->GetNumberOfScalarComponents() == 3 
+   if ( FileInternal->GetNumberOfScalarComponents() == 3
     && !FileInternal->HasLUT() )
    {
       SetWriteToRGB();
-   } 
+   }
    else
    {
       ValEntry *photInt = CopyValEntry(0x0028,0x0004);
@@ -907,9 +907,9 @@ void FileHelper::SetWriteToRaw()
       std::string vr = "OB";
       if ( FileInternal->GetBitsAllocated()>8 )
          vr = "OW";
-      if ( FileInternal->GetBitsAllocated()==24 ) // For RGB ACR files 
+      if ( FileInternal->GetBitsAllocated()==24 ) // For RGB ACR files
          vr = "OB";
-      BinEntry *pixel = 
+      BinEntry *pixel =
          CopyBinEntry(GetFile()->GetGrPixel(),GetFile()->GetNumPixel(),vr);
       pixel->SetValue(GDCM_BINLOADED);
       pixel->SetBinArea(PixelWriteConverter->GetData(),false);
@@ -923,17 +923,17 @@ void FileHelper::SetWriteToRaw()
 
 /**
  * \brief Updates the File to write RGB data (as opposed to RAW data)
- *       (modifies, when necessary, photochromatic interpretation, 
- *       samples per pixel, Planar configuration, 
+ *       (modifies, when necessary, photochromatic interpretation,
+ *       samples per pixel, Planar configuration,
  *       bits allocated, bits stored, high bit -ACR 24 bits-
  *       Pixels element VR, pushes out the LUT, )
- */ 
+ */
 void FileHelper::SetWriteToRGB()
 {
    if ( FileInternal->GetNumberOfScalarComponents()==3 )
    {
       PixelReadConverter->BuildRGBImage();
-      
+
       ValEntry *spp = CopyValEntry(0x0028,0x0002);
       spp->SetValue("3 ");
 
@@ -957,9 +957,9 @@ void FileHelper::SetWriteToRGB()
       std::string vr = "OB";
       if ( FileInternal->GetBitsAllocated()>8 )
          vr = "OW";
-      if ( FileInternal->GetBitsAllocated()==24 ) // For RGB ACR files 
+      if ( FileInternal->GetBitsAllocated()==24 ) // For RGB ACR files
          vr = "OB";
-      BinEntry *pixel = 
+      BinEntry *pixel =
          CopyBinEntry(GetFile()->GetGrPixel(),GetFile()->GetNumPixel(),vr);
       pixel->SetValue(GDCM_BINLOADED);
       pixel->SetBinArea(PixelWriteConverter->GetData(),false);
@@ -983,9 +983,9 @@ void FileHelper::SetWriteToRGB()
       Archive->Push(0x0028,0x1199);
 
       // For old '24 Bits' ACR-NEMA
-      // Thus, we have a RGB image and the bits allocated = 24 and 
+      // Thus, we have a RGB image and the bits allocated = 24 and
       // samples per pixels = 1 (in the read file)
-      if ( FileInternal->GetBitsAllocated()==24 ) 
+      if ( FileInternal->GetBitsAllocated()==24 )
       {
          ValEntry *bitsAlloc = CopyValEntry(0x0028,0x0100);
          bitsAlloc->SetValue("8 ");
@@ -1008,8 +1008,8 @@ void FileHelper::SetWriteToRGB()
 }
 
 /**
- * \brief Restore the File write mode  
- */ 
+ * \brief Restore the File write mode
+ */
 void FileHelper::RestoreWrite()
 {
    Archive->Restore(0x0028,0x0002);
@@ -1031,10 +1031,10 @@ void FileHelper::RestoreWrite()
    Archive->Restore(0x0028,0x1203);
 
    // For the Palette Color Lookup Table UID
-   Archive->Restore(0x0028,0x1203); 
+   Archive->Restore(0x0028,0x1203);
 
 
-   // group 0002 may be pushed out for ACR-NEMA writting purposes 
+   // group 0002 may be pushed out for ACR-NEMA writting purposes
    Archive->Restore(0x0002,0x0000);
    Archive->Restore(0x0002,0x0001);
    Archive->Restore(0x0002,0x0002);
@@ -1051,9 +1051,9 @@ void FileHelper::RestoreWrite()
  * \brief Pushes out the whole group 0002
  *        FIXME : better, set a flag to tell the writer not to write it ...
  *        FIXME : method should probably have an other name !
- *                SetWriteFileTypeToACR is NOT opposed to 
+ *                SetWriteFileTypeToACR is NOT opposed to
  *                SetWriteFileTypeToExplicitVR and SetWriteFileTypeToImplicitVR
- */ 
+ */
 void FileHelper::SetWriteFileTypeToACR()
 {
    Archive->Push(0x0002,0x0000);
@@ -1097,11 +1097,11 @@ void FileHelper::SetWriteFileTypeToJPEG()
 }
 
 /**
- * \brief Sets in the File the TransferSyntax to 'Explicit VR Little Endian"   
- */ 
+ * \brief Sets in the File the TransferSyntax to 'Explicit VR Little Endian"
+ */
 void FileHelper::SetWriteFileTypeToExplicitVR()
 {
-   std::string ts = Util::DicomString( 
+   std::string ts = Util::DicomString(
       Global::GetTS()->GetSpecialTransferSyntax(TS::ExplicitVRLittleEndian) );
 
    ValEntry *tss = CopyValEntry(0x0002,0x0010);
@@ -1111,8 +1111,8 @@ void FileHelper::SetWriteFileTypeToExplicitVR()
 }
 
 /**
- * \brief Sets in the File the TransferSyntax to 'Implicit VR Little Endian"   
- */ 
+ * \brief Sets in the File the TransferSyntax to 'Implicit VR Little Endian"
+ */
 void FileHelper::SetWriteFileTypeToImplicitVR()
 {
    std::string ts = Util::DicomString(
@@ -1127,24 +1127,24 @@ void FileHelper::SetWriteFileTypeToImplicitVR()
 
 /**
  * \brief Restore in the File the initial group 0002
- */ 
+ */
 void FileHelper::RestoreWriteFileType()
 {
 }
 
 /**
  * \brief Set the Write not to Libido format
- */ 
+ */
 void FileHelper::SetWriteToLibido()
 {
    ValEntry *oldRow = dynamic_cast<ValEntry *>
                 (FileInternal->GetDocEntry(0x0028, 0x0010));
    ValEntry *oldCol = dynamic_cast<ValEntry *>
                 (FileInternal->GetDocEntry(0x0028, 0x0011));
-   
+
    if ( oldRow && oldCol )
    {
-      std::string rows, columns; 
+      std::string rows, columns;
 
       ValEntry *newRow=new ValEntry(oldRow->GetDictEntry());
       ValEntry *newCol=new ValEntry(oldCol->GetDictEntry());
@@ -1166,7 +1166,7 @@ void FileHelper::SetWriteToLibido()
 
 /**
  * \brief Set the Write not to No Libido format
- */ 
+ */
 void FileHelper::SetWriteToNoLibido()
 {
    ValEntry *recCode = dynamic_cast<ValEntry *>
@@ -1184,7 +1184,7 @@ void FileHelper::SetWriteToNoLibido()
 
 /**
  * \brief Restore the Write format
- */ 
+ */
 void FileHelper::RestoreWriteOfLibido()
 {
    Archive->Restore(0x0028,0x0010);
@@ -1200,10 +1200,10 @@ void FileHelper::RestoreWriteOfLibido()
 
 /**
  * \brief Duplicates a ValEntry or creates it.
- * @param   group   Group number of the Entry 
+ * @param   group   Group number of the Entry
  * @param   elem  Element number of the Entry
- * \return  pointer to the new Val Entry (NULL when creation failed).          
- */ 
+ * \return  pointer to the new Val Entry (NULL when creation failed).
+ */
 ValEntry *FileHelper::CopyValEntry(uint16_t group, uint16_t elem)
 {
    DocEntry *oldE = FileInternal->GetDocEntry(group, elem);
@@ -1224,19 +1224,19 @@ ValEntry *FileHelper::CopyValEntry(uint16_t group, uint16_t elem)
 
 /**
  * \brief   Duplicates a BinEntry or creates it.
- * @param   group   Group number of the Entry 
+ * @param   group   Group number of the Entry
  * @param   elem  Element number of the Entry
  * @param   vr  Value Representation of the Entry
  *          FIXME : what is it used for?
  * \return  pointer to the new Bin Entry (NULL when creation failed).
- */ 
+ */
 BinEntry *FileHelper::CopyBinEntry(uint16_t group, uint16_t elem,
                                    const TagName &vr)
 {
    DocEntry *oldE = FileInternal->GetDocEntry(group, elem);
    BinEntry *newE;
 
-   if ( oldE && vr != GDCM_UNKNOWN ) 
+   if ( oldE && vr != GDCM_UNKNOWN )
       if ( oldE->GetVR() != vr )
          oldE = NULL;
 
@@ -1258,13 +1258,13 @@ BinEntry *FileHelper::CopyBinEntry(uint16_t group, uint16_t elem,
  *         in order to produce a 'True Dicom V3' image.
  *
  *         We cannot know *how* the user made the File :
- *         (reading an old ACR-NEMA file or a not very clean DICOM file ...) 
+ *         (reading an old ACR-NEMA file or a not very clean DICOM file ...)
  *          Just before writting :
  *             - we check the Entries
  *             - we create the mandatory entries if they are missing
  *             - we modify the values if necessary
  *             - we push the sensitive entries to the Archive
- *          The writing process will restore the entries as they where before 
+ *          The writing process will restore the entries as they where before
  *          entering FileHelper::CheckMandatoryElements, so the user will always
  *          see the entries just as they were before he decided to write.
  *
@@ -1276,18 +1276,18 @@ BinEntry *FileHelper::CopyBinEntry(uint16_t group, uint16_t elem,
  *       -  Entries whose type is 2c are mandatory-inside-a-Sequence,
  *                             with an optional value
  *       -  Entries whose type is 3 are optional
- * 
- * \todo 
+ *
+ * \todo
  *         - warn the user if we had to add some entries :
  *         even if a mandatory entry is missing, we add it, with a default value
  *         (we don't want to give up the writting process if user forgot to
  *         specify Lena's Patient ID, for instance ...)
  *         - read the whole PS 3.3 Part of DICOM  (890 pages)
  *         and write a *full* checker (probably one method per Modality ...)
- *         Any contribution is welcome. 
+ *         Any contribution is welcome.
  *         - write a user callable full checker, to allow post reading
- *         and/or pre writting image consistency check.           
- */ 
+ *         and/or pre writting image consistency check.
+ */
 
 /* -------------------------------------------------------------------------------------
 To be moved to User's guide / WIKI  ?
@@ -1310,43 +1310,43 @@ them.
 'Serie Instance UID'(0x0020,0x000e)
 'Study Instance UID'(0x0020,0x000d) are kept as is if already exist,
                                     created  if it doesn't.
- The user is allowed to create his own Series/Studies, 
+ The user is allowed to create his own Series/Studies,
      keeping the same 'Serie Instance UID' / 'Study Instance UID' for various images
- Warning :     
+ Warning :
  The user shouldn't add any image to a 'Manufacturer Serie'
      but there is no way no to allowed him to do that
-     
+
  None of the 'shadow elements' are droped out.
-     
+
 
 1)
 'Modality' (0x0008,0x0060)       is defaulted to "OT" (other) if missing.
 'Conversion Type (0x0008,0x0064) is forced to 'SYN' (Synthetic Image).
 'Study Date', 'Study Time' are defaulted to current Date and Time.
- 
+
 1)2)3)
 'Media Storage SOP Class UID' (0x0002,0x0002)
-'SOP Class UID'               (0x0008,0x0016) are set to 
+'SOP Class UID'               (0x0008,0x0016) are set to
                                                [Secondary Capture Image Storage]
 'Image Type'                  (0x0008,0x0008) is forced to  "DERIVED\PRIMARY"
 Conversion Type               (0x0008,0x0064) is forced to 'SYN' (Synthetic Image)
 
 2)4)
 If 'SOP Class UID' exists in the native image  ('true DICOM' image)
-    we create the 'Source Image Sequence' SeqEntry (0x0008, 0x2112)    
+    we create the 'Source Image Sequence' SeqEntry (0x0008, 0x2112)
     --> 'Referenced SOP Class UID' (0x0008, 0x1150)
          whose value is the original 'SOP Class UID'
     --> 'Referenced SOP Instance UID' (0x0008, 0x1155)
          whose value is the original 'SOP Class UID'
 
-3) TODO : find a trick to allow user to pass to the writter the list of the Dicom images 
-          or the Series, (or the Study ?) he used to created his image 
+3) TODO : find a trick to allow user to pass to the writter the list of the Dicom images
+          or the Series, (or the Study ?) he used to created his image
           (MIP, MPR, cartography image, ...)
            These info should be stored (?)
           0008 1110 SQ 1 Referenced Study Sequence
           0008 1115 SQ 1 Referenced Series Sequence
           0008 1140 SQ 1 Referenced Image Sequence
-       
+
 4) When user *knows* he didn't modified the pixels, he may ask the writer to keep some
 informations unchanged :
 'Media Storage SOP Class UID' (0x0002,0x0002)
@@ -1357,14 +1357,14 @@ He has to use gdcm::FileHelper::SetKeepMediaStorageSOPClassUID(true)
 (probabely name has to be changed)
 
 
-Bellow follows the full description (hope so !) of the consistency checks performed 
+Bellow follows the full description (hope so !) of the consistency checks performed
 by gdcm::FileHelper::CheckMandatoryElements()
 
 
 -->'Media Storage SOP Class UID' (0x0002,0x0002)
--->'SOP Class UID'               (0x0008,0x0016) are set to 
+-->'SOP Class UID'               (0x0008,0x0016) are set to
                                                [Secondary Capture Image Storage]
-   (Potentialy, the image was modified by user, and post-processed; 
+   (Potentialy, the image was modified by user, and post-processed;
     it's no longer a 'native' image)
   Except if user told he wants to keep MediaStorageSOPClassUID,
   when *he* knows he didn't modify the image (e.g. : he just anonymized the file)
@@ -1374,16 +1374,16 @@ by gdcm::FileHelper::CheckMandatoryElements()
      (The written image is no longer an 'ORIGINAL' one)
   Except if user told he wants to keep MediaStorageSOPClassUID,
   when *he* knows he didn't modify the image (e.g. : he just anonymized the file)
-   
+
  -->  Conversion Type (0x0008,0x0064)
      is forced to 'SYN' (Synthetic Image)
   Except if user told he wants to keep MediaStorageSOPClassUID,
   when *he* knows he didn't modify the image (e.g. : he just anonymized the file)
-            
---> 'Modality' (0x0008,0x0060)   
-    is defaulted to "OT" (other) if missing.   
+
+--> 'Modality' (0x0008,0x0060)
+    is defaulted to "OT" (other) if missing.
     (a fully user created image belongs to *no* modality)
-      
+
 --> 'Media Storage SOP Instance UID' (0x0002,0x0003)
 --> 'Implementation Class UID'       (0x0002,0x0012)
     are automatically generated; no user intervention possible
@@ -1391,21 +1391,21 @@ by gdcm::FileHelper::CheckMandatoryElements()
 --> 'Serie Instance UID'(0x0020,0x000e)
 --> 'Study Instance UID'(0x0020,0x000d) are kept as is if already exist
                                              created  if it doesn't.
-     The user is allowed to create his own Series/Studies, 
-     keeping the same 'Serie Instance UID' / 'Study Instance UID' 
+     The user is allowed to create his own Series/Studies,
+     keeping the same 'Serie Instance UID' / 'Study Instance UID'
      for various images
-     Warning :     
+     Warning :
      The user shouldn't add any image to a 'Manufacturer Serie'
-     but there is no way no to allowed him to do that 
-             
+     but there is no way no to allowed him to do that
+
 --> If 'SOP Class UID' exists in the native image  ('true DICOM' image)
     we create the 'Source Image Sequence' SeqEntry (0x0008, 0x2112)
-    
+
     --> 'Referenced SOP Class UID' (0x0008, 0x1150)
          whose value is the original 'SOP Class UID'
     --> 'Referenced SOP Instance UID' (0x0008, 0x1155)
          whose value is the original 'SOP Class UID'
-    
+
 --> Bits Stored, Bits Allocated, Hight Bit Position are checked for consistency
 --> Pixel Spacing     (0x0028,0x0030) is defaulted to "1.0\1.0"
 --> Samples Per Pixel (0x0028,0x0002) is defaulted to 1 (grayscale)
@@ -1417,19 +1417,19 @@ by gdcm::FileHelper::CheckMandatoryElements()
 --> Study Date, Study Time are defaulted to current Date and Time
    (they remain unchanged if they exist)
 
---> Patient Orientation : (0x0020,0x0020), if not present, is deduced from 
+--> Patient Orientation : (0x0020,0x0020), if not present, is deduced from
     Image Orientation (Patient) : (0020|0037) or from
     Image Orientation (RET)     : (0020 0035)
-   
+
 --> Study ID, Series Number, Instance Number, Patient Orientation (Type 2)
     are created, with empty value if there are missing.
 
 --> Manufacturer, Institution Name, Patient's Name, (Type 2)
     are defaulted with a 'gdcm' value.
-    
+
 --> Patient ID, Patient's Birth Date, Patient's Sex, (Type 2)
 --> Referring Physician's Name  (Type 2)
-    are created, with empty value if there are missing.  
+    are created, with empty value if there are missing.
 
  -------------------------------------------------------------------------------------*/
 
@@ -1515,9 +1515,9 @@ void FileHelper::CheckMandatoryElements()
       CopyMandatoryEntry(0x0028,0x0100,"16");
       gdcmWarningMacro("(0028,0100) changed from "
          << nbBitsAllocated << " to 16 for consistency purpose");
-      nbBitsAllocated = 16; 
+      nbBitsAllocated = 16;
    }
-   // check 'Bits Stored' vs 'Bits Allocated'   
+   // check 'Bits Stored' vs 'Bits Allocated'
    int nbBitsStored = FileInternal->GetBitsStored();
    if ( nbBitsStored == 0 || nbBitsStored > nbBitsAllocated )
    {
@@ -1527,16 +1527,16 @@ void FileHelper::CheckMandatoryElements()
       gdcmWarningMacro("(0028,0101) changed from "
                        << nbBitsStored << " to " << nbBitsAllocated
                        << " for consistency purpose" );
-      nbBitsStored = nbBitsAllocated; 
+      nbBitsStored = nbBitsAllocated;
     }
    // check 'Hight Bit Position' vs 'Bits Allocated' and 'Bits Stored'
    int highBitPosition = FileInternal->GetHighBitPosition();
-   if ( highBitPosition == 0 || 
+   if ( highBitPosition == 0 ||
         highBitPosition > nbBitsAllocated-1 ||
         highBitPosition < nbBitsStored-1  )
    {
       os.str("");
-      os << nbBitsStored - 1; 
+      os << nbBitsStored - 1;
       CopyMandatoryEntry(0x0028,0x0102,os.str());
       gdcmWarningMacro("(0028,0102) changed from "
                        << highBitPosition << " to " << nbBitsAllocated-1
@@ -1690,7 +1690,7 @@ void FileHelper::CheckMandatoryElements()
    // Accession Number
    //CopyMandatoryEntry(0x0008,0x0050,"");
    CheckMandatoryEntry(0x0008,0x0050,"");
-   
+
 
    // ----- Add Mandatory Entries if missing ---
    // Entries whose type is 1 are mandatory, with a mandatory value
@@ -1703,18 +1703,18 @@ void FileHelper::CheckMandatoryElements()
 
    // 'Study Instance UID'
    // Keep the value if exists
-   // The user is allowed to create his own Study, 
+   // The user is allowed to create his own Study,
    //          keeping the same 'Study Instance UID' for various images
    // The user may add images to a 'Manufacturer Study',
-   //          adding new Series to an already existing Study 
+   //          adding new Series to an already existing Study
    CheckMandatoryEntry(0x0020,0x000d,Util::CreateUniqueUID());
 
    // 'Serie Instance UID'
    // Keep the value if exists
-   // The user is allowed to create his own Series, 
+   // The user is allowed to create his own Series,
    // keeping the same 'Serie Instance UID' for various images
    // The user shouldn't add any image to a 'Manufacturer Serie'
-   // but there is no way no to prevent him for doing that 
+   // but there is no way no to prevent him for doing that
    CheckMandatoryEntry(0x0020,0x000e,Util::CreateUniqueUID());
 
    // Study ID
@@ -1788,7 +1788,7 @@ void FileHelper::CopyMandatoryEntry(uint16_t group,uint16_t elem,std::string val
  */
 void FileHelper::RestoreWriteMandatory()
 {
-   // group 0002 may be pushed out for ACR-NEMA writting purposes 
+   // group 0002 may be pushed out for ACR-NEMA writting purposes
    Archive->Restore(0x0002,0x0000);
    Archive->Restore(0x0002,0x0001);
    Archive->Restore(0x0002,0x0002);
@@ -1839,11 +1839,11 @@ void FileHelper::Initialize()
 }
 
 /**
- * \brief Reads/[decompresses] the pixels, 
- *        *without* making RGB from Palette Colors 
- * @return the pixels area, whatever its type 
- *         (uint8_t is just for prototyping : feel free to Cast it) 
- */ 
+ * \brief Reads/[decompresses] the pixels,
+ *        *without* making RGB from Palette Colors
+ * @return the pixels area, whatever its type
+ *         (uint8_t is just for prototyping : feel free to Cast it)
+ */
 uint8_t *FileHelper::GetRaw()
 {
    PixelReadConverter->SetUserFunction( UserFunction );
@@ -1854,7 +1854,7 @@ uint8_t *FileHelper::GetRaw()
       // The Raw image migth not be loaded yet:
       std::ifstream *fp = FileInternal->OpenFile();
       PixelReadConverter->ReadAndDecompressPixelData( fp );
-      if ( fp ) 
+      if ( fp )
          FileInternal->CloseFile();
 
       raw = PixelReadConverter->GetRaw();

@@ -1,19 +1,19 @@
 /*=========================================================================
-                                                                                
+
   Program:   gdcm
   Module:    gdcmFileHelper.h
   Language:  C++
   Date:      $Date$
   Version:   $Revision$
-                                                                                
+
   Copyright (c) CREATIS (Centre de Recherche et d'Applications en Traitement de
   l'Image). All rights reserved. See Doc/License.txt or
   http://www.creatis.insa-lyon.fr/Public/Gdcm/License.html for details.
-                                                                                
+
      This software is distributed WITHOUT ANY WARRANTY; without even
      the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
      PURPOSE.  See the above copyright notices for more information.
-                                                                                
+
 =========================================================================*/
 
 #ifndef GDCMFILEHELPER_H
@@ -24,7 +24,7 @@
 
 
 
-namespace gdcm 
+namespace gdcm
 {
 class File;
 class ValEntry;
@@ -50,26 +50,26 @@ public:
       WMODE_RAW,
       WMODE_RGB
    };
-     
+
 public:
    FileHelper( );
    FileHelper( File *header );
    GDCM_LEGACY(FileHelper( std::string const &filename ))
-   
+
    virtual ~FileHelper();
 
-   void Print(std::ostream &os = std::cout, std::string const &indent = ""); 
+   void Print(std::ostream &os = std::cout, std::string const &indent = "");
 
    /// Accessor to \ref File
    File *GetFile() { return FileInternal; }
-   
+
 
    void SetLoadMode(int loadMode);
    void SetFileName(std::string const &fileName);
    bool Load();
    /// to allow user to modify pixel order (e.g. Mirror, TopDown,...)
-   void SetUserFunction( VOID_FUNCTION_PUINT8_PFILE_POINTER userFunc ) 
-                        { UserFunction = userFunc; }   
+   void SetUserFunction( VOID_FUNCTION_PUINT8_PFILE_POINTER userFunc )
+                        { UserFunction = userFunc; }
    // File methods
    bool SetValEntry(std::string const &content,
                     uint16_t group, uint16_t elem);
@@ -152,10 +152,10 @@ public:
    bool WriteDcmExplVR(std::string const &fileName);
    bool WriteAcr      (std::string const &fileName);
    bool Write         (std::string const &fileName);
-   /// \brief if user knows he didn't modify the pixels (e.g. he just anonymized 
+   /// \brief if user knows he didn't modify the pixels (e.g. he just anonymized
    ///        the file), he is allowed to ask to keep the original
-   ///        'Media Storage SOP Class UID' and 'Image Type'   
-   void SetKeepMediaStorageSOPClassUID (bool v) 
+   ///        'Media Storage SOP Class UID' and 'Image Type'
+   void SetKeepMediaStorageSOPClassUID (bool v)
                               { KeepMediaStorageSOPClassUID = v; }
    // no GetKeepMediaStorageSOPClassUID() method, on purpose!
 
@@ -178,7 +178,7 @@ protected:
    void RestoreWriteOfLibido();
 
    ValEntry *CopyValEntry(uint16_t group, uint16_t elem);
-   BinEntry *CopyBinEntry(uint16_t group, uint16_t elem, 
+   BinEntry *CopyBinEntry(uint16_t group, uint16_t elem,
                           const std::string &vr);
    void CheckMandatoryElements();
    void CheckMandatoryEntry(uint16_t group, uint16_t elem,std::string value);
@@ -195,10 +195,10 @@ private:
    File *FileInternal;
 
    /// \brief Whether the underlying \ref gdcm::File was loaded by
-   ///  the constructor or passed to the constructor. 
+   ///  the constructor or passed to the constructor.
    ///  When false the destructor is in charge of deletion.
    bool SelfHeader;
-   
+
    /// Whether already parsed or not
    bool Parsed;
 
@@ -226,10 +226,10 @@ private:
    /// User will Cast it according what he founds with f->GetPixelType()
    /// See vtkgdcmSerieViewer for an example
    VOID_FUNCTION_PUINT8_PFILE_POINTER UserFunction;
-   
-   /// \brief if user knows he didn't modify the pixels (e.g. he just 
+
+   /// \brief if user knows he didn't modify the pixels (e.g. he just
    /// anonymized the file), he is allowed to ask to keep the original
-   /// 'Media Storage SOP Class UID' and 'Image Type'  
+   /// 'Media Storage SOP Class UID' and 'Image Type'
    bool KeepMediaStorageSOPClassUID;
 };
 } // end namespace gdcm

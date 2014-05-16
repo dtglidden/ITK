@@ -1,19 +1,19 @@
 /*=========================================================================
-                                                                                
+
   Program:   gdcm
   Module:    gdcmFile.cxx
   Language:  C++
   Date:      $Date$
   Version:   $Revision$
-                                                                                
+
   Copyright (c) CREATIS (Centre de Recherche et d'Applications en Traitement de
   l'Image). All rights reserved. See Doc/License.txt or
   http://www.creatis.insa-lyon.fr/Public/Gdcm/License.html for details.
-                                                                                
+
      This software is distributed WITHOUT ANY WARRANTY; without even
      the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
      PURPOSE.  See the above copyright notices for more information.
-                                                                                
+
 =========================================================================*/
 
 #if defined(__BORLANDC__)
@@ -26,16 +26,16 @@
 // Image Position (Patient)                            (0020,0032):
 // If not found (ACR_NEMA) we try Image Position       (0020,0030)
 // If not found (ACR-NEMA), we consider Slice Location (0020,1041)
-//                                   or Location       (0020,0050) 
-//                                   as the Z coordinate, 
+//                                   or Location       (0020,0050)
+//                                   as the Z coordinate,
 // 0. for all the coordinates if nothing is found
 //
 // Image Position (Patient) (0020,0032) VM=3
 // -->
-//  The attribute Patient Orientation (0020,0020) from the General Image Module 
-// is of type 2C and has the condition Required if image does not require 
-// Image Orientation (0020,0037) and Image Position (0020,0032). 
-// However, if the image does require the attributes 
+//  The attribute Patient Orientation (0020,0020) from the General Image Module
+// is of type 2C and has the condition Required if image does not require
+// Image Orientation (0020,0037) and Image Position (0020,0032).
+// However, if the image does require the attributes
 // - Image Orientation (Patient) (0020,0037), VM=6
 // - Image Position (Patient)    (0020,0032), VM=3
 // then attribute Patient Orientation (0020,0020) should not be present
@@ -69,13 +69,13 @@
 // FFDR = Feet First-Decubitus Right
 // FFDL = Feet First-Decubitus Left
 
-//  we can also find (non standard!)     
+//  we can also find (non standard!)
 
 // SEMIERECT
 // SUPINE
 
 // CS 2 Patient Orientation (0020 0020)
-//    When the coordinates of the image 
+//    When the coordinates of the image
 //    are always present, this field is almost never used.
 //    Better we don't trust it too much ...
 //    Found Values are :
@@ -88,7 +88,7 @@
 //
 // (0020|0037) [Image Orientation (Patient)] [1\0\0\0\1\0 ]
 
-               
+
 // ---------------------------------------------------------------
 //
 #include "gdcmFile.h"
@@ -107,7 +107,7 @@
 #include <stdio.h>  //sscanf
 #include <stdlib.h> // for atoi
 
-namespace gdcm 
+namespace gdcm
 {
 
 //-----------------------------------------------------------------------------
@@ -142,16 +142,16 @@ File::~File()
 //-----------------------------------------------------------------------------
 // Public
 /**
- * \brief   Loader  
+ * \brief   Loader
  * @return false if file cannot be open or no swap info was found,
  *         or no tag was found.
  */
-bool File::Load( ) 
+bool File::Load( )
 {
    if ( ! this->Document::Load( ) )
       return false;
 
-    return DoTheLoadingJob( );   
+    return DoTheLoadingJob( );
 }
 
 /**
@@ -159,7 +159,7 @@ bool File::Load( )
  * @return false if file cannot be open or no swap info was found,
  *         or no tag was found.
  */
-bool File::DoTheLoadingJob( ) 
+bool File::DoTheLoadingJob( )
 {
    // for some ACR-NEMA images GrPixel, NumPixel is *not* 7fe0,0010
    // We may encounter the 'RETired' (0x0028, 0x0200) tag
@@ -170,7 +170,7 @@ bool File::DoTheLoadingJob( )
    // is conventionally the element 0x0010 (when the norm is respected).
    // When the "Image Location" is missing we default to group 0x7fe0.
    // Note: this IS the right place for the code
- 
+
    // Image Location
    const std::string &imgLocation = GetEntryValue(0x0028, 0x0200);
    if ( imgLocation == GDCM_UNFOUND || imgLocation == GDCM_BINLOADED )
@@ -181,7 +181,7 @@ bool File::DoTheLoadingJob( )
    else
    {
       GrPixel = (uint16_t) atoi( imgLocation.c_str() );
-   }   
+   }
 
    // sometimes Image Location value doesn't follow
    // the supposed processor endianness.
@@ -204,21 +204,21 @@ bool File::DoTheLoadingJob( )
    // Now, we know GrPixel and NumPixel.
    // Let's create a VirtualDictEntry to allow a further VR modification
    // and force VR to match with BitsAllocated.
-   DocEntry *entry = GetDocEntry(GrPixel, NumPixel); 
+   DocEntry *entry = GetDocEntry(GrPixel, NumPixel);
    if ( entry != 0 )
    {
       // Compute the RLE or JPEG info
       OpenFile();
       const std::string &ts = GetTransferSyntax();
       Fp->seekg( entry->GetOffset(), std::ios::beg );
-      if ( Global::GetTS()->IsRLELossless(ts) ) 
+      if ( Global::GetTS()->IsRLELossless(ts) )
          ComputeRLEInfo();
       else if ( Global::GetTS()->IsJPEG(ts) )
          ComputeJPEGFragmentInfo();
       CloseFile();
 
       // Create a new BinEntry to change the DictEntry
-      // The changed DictEntry will have 
+      // The changed DictEntry will have
       // - a correct PixelVR OB or OW)
       // - the name to "Pixel Data"
       BinEntry *oldEntry = dynamic_cast<BinEntry *>(entry);
@@ -227,7 +227,7 @@ bool File::DoTheLoadingJob( )
          std::string PixelVR;
          // 8 bits allocated is a 'O Bytes' , as well as 24 (old ACR-NEMA RGB)
          // more than 8 (i.e 12, 16) is a 'O Words'
-         if ( GetBitsAllocated() == 8 || GetBitsAllocated() == 24 ) 
+         if ( GetBitsAllocated() == 8 || GetBitsAllocated() == 24 )
             PixelVR = "OB";
          else
             PixelVR = "OW";
@@ -256,7 +256,7 @@ bool File::DoTheLoadingJob( )
  *         and contains the mandatory information for being considered as
  *         a well formed and usable Dicom/Acr File.
  * @return true when File is the one of a reasonable Dicom/Acr file,
- *         false otherwise. 
+ *         false otherwise.
  */
 bool File::IsReadable()
 {
@@ -274,7 +274,7 @@ bool File::IsReadable()
    bool b0028_0100 = true;
    if ( !GetDocEntry(0x0028, 0x0100) )
    {
-      gdcmWarningMacro("Bits Allocated (0028|0100) not found"); 
+      gdcmWarningMacro("Bits Allocated (0028|0100) not found");
       //return false; // "Bits Allocated"
       b0028_0100 = false;
    }
@@ -288,7 +288,7 @@ bool File::IsReadable()
    bool b0028_0102 = true;
    if ( !GetDocEntry(0x0028, 0x0102) )
    {
-      gdcmWarningMacro("Hight Bit (0028|0102) not found"); 
+      gdcmWarningMacro("Hight Bit (0028|0102) not found");
       //return false; // "High Bit"
       b0028_0102 = false;
    }
@@ -369,13 +369,13 @@ ModalityType File::GetModality()
       else if ( strModality.find("PT")  < strModality.length()) return PT;
       else if ( strModality.find("RF")  < strModality.length()) return RF;
       else if ( strModality.find("RG")  < strModality.length()) return RG;
-      else if ( strModality.find("RTDOSE")   
+      else if ( strModality.find("RTDOSE")
                                         < strModality.length()) return RTDOSE;
-      else if ( strModality.find("RTIMAGE")  
+      else if ( strModality.find("RTIMAGE")
                                         < strModality.length()) return RTIMAGE;
       else if ( strModality.find("RTPLAN")
                                         < strModality.length()) return RTPLAN;
-      else if ( strModality.find("RTSTRUCT") 
+      else if ( strModality.find("RTSTRUCT")
                                         < strModality.length()) return RTSTRUCT;
       else if ( strModality.find("SM")  < strModality.length()) return SM;
       else if ( strModality.find("ST")  < strModality.length()) return ST;
@@ -413,7 +413,7 @@ int File::GetXSize()
 /**
  * \brief   Retrieve the number of lines of image.
  * \warning The defaulted value is 1 as opposed to File::GetXSize()
- * @return  The encountered size when found, 1 by default 
+ * @return  The encountered size when found, 1 by default
  *          (The ACR-NEMA file contains a Signal, not an Image).
  */
 int File::GetYSize()
@@ -452,7 +452,7 @@ int File::GetZSize()
       return atoi( strSize.c_str() );
    }
 
-   // We then consider the "Planes" entry as the third dimension 
+   // We then consider the "Planes" entry as the third dimension
    const std::string &strSize2 = GetEntryValue(0x0028,0x0012);
    if ( strSize2 != GDCM_UNFOUND )
    {
@@ -461,7 +461,7 @@ int File::GetZSize()
    return 1;
 }
 // Special case:
-//  ts["1.2.840.10008.5.1.4.1.1.4.1"] = "Enhanced MR Image Storage"; 
+//  ts["1.2.840.10008.5.1.4.1.1.4.1"] = "Enhanced MR Image Storage";
 bool File::GetSpacing(float &xspacing, float &yspacing, float &zspacing)
 {
    xspacing = yspacing = zspacing = 1.0;
@@ -568,7 +568,7 @@ float File::GetXSpacing()
    const std::string &strImagerPixelSpacing = GetEntryValue(0x0018,0x1164);
    if ( strImagerPixelSpacing != GDCM_UNFOUND )
    {
-      if ( ( nbValues = sscanf( strImagerPixelSpacing.c_str(), 
+      if ( ( nbValues = sscanf( strImagerPixelSpacing.c_str(),
             "%f\\%f", &yspacing, &xspacing)) != 2 )
       {
          // if no values, xspacing is set to 1.0
@@ -580,7 +580,7 @@ float File::GetXSpacing()
 
          if ( xspacing == 0.0 )
             xspacing = 1.0;
-      }  
+      }
       return xspacing;
    }
 
@@ -592,7 +592,7 @@ float File::GetXSpacing()
       return 1.;
    }
 
-   if ( ( nbValues = sscanf( strSpacing.c_str(), 
+   if ( ( nbValues = sscanf( strSpacing.c_str(),
          "%f \\%f ", &yspacing, &xspacing)) != 2 )
    {
       // if no values, xspacing is set to 1.0
@@ -625,7 +625,7 @@ float File::GetXSpacing()
 
 /**
   * \brief gets the info from 0018,1164 : ImagerPixelSpacing
-  *               then from   0028,0030 : Pixel Spacing                         
+  *               then from   0028,0030 : Pixel Spacing
   *             else 1.0
   * @return Y dimension of a pixel
   */
@@ -644,7 +644,7 @@ float File::GetYSpacing()
    if ( strImagerPixelSpacing != GDCM_UNFOUND )
    {
       nbValues = sscanf( strImagerPixelSpacing.c_str(), "%f", &yspacing);
-   
+
    // if sscanf cannot read any float value, it won't affect yspacing
       if ( nbValues == 0 )
             yspacing = 1.0;
@@ -652,10 +652,10 @@ float File::GetYSpacing()
       if ( yspacing == 0.0 )
             yspacing = 1.0;
 
-      return yspacing;  
+      return yspacing;
    }
 
-   std::string strSpacing = GetEntryValue(0x0028,0x0030);  
+   std::string strSpacing = GetEntryValue(0x0028,0x0030);
    if ( strSpacing == GDCM_UNFOUND )
    {
       gdcmWarningMacro("Unfound Pixel Spacing (0028,0030)");
@@ -673,7 +673,7 @@ float File::GetYSpacing()
       yspacing = 1.0;
 
    return yspacing;
-} 
+}
 
 /**
  * \brief gets the info from 0018,0088 : Space Between Slices
@@ -682,10 +682,10 @@ float File::GetYSpacing()
  *
  * When an element is missing, we suppose slices join together
  * (no overlapping, no interslice gap) but we have no way to check it !
- * For *Dicom* images, ZSpacing *should be* calculated using 
+ * For *Dicom* images, ZSpacing *should be* calculated using
  * XOrigin, YOrigin, ZOrigin (of the top left image corner)
  * of 2 consecutive images, and the Orientation
- * Computing ZSpacing on a single image is not really meaningfull ! 
+ * Computing ZSpacing on a single image is not really meaningfull !
  * @return Z dimension of a voxel-to be
  */
 float File::GetZSpacing()
@@ -701,18 +701,18 @@ float File::GetZSpacing()
    //   disjointes    (Spacing between Slices > Slice Thickness)
    // Slice Thickness : epaisseur de tissus sur laquelle est acquis le signal
    //   It only concerns the MRI guys, not people wanting to visualize volumes
-   //   If Spacing Between Slices is missing, 
+   //   If Spacing Between Slices is missing,
    //   we suppose slices joint together
 
    // --->
    // ---> Warning :
    // --->
-   
+
   //
-  // For *Dicom* images, ZSpacing should be calculated using 
+  // For *Dicom* images, ZSpacing should be calculated using
   // XOrigin, YOrigin, ZOrigin (of the top left image corner)
   // of 2 consecutive images, and the Orientation
-  // 
+  //
   // Computing ZSpacing on a single image is not really meaningfull !
   float xspacing = 1.0;
   float yspacing = 1.0;
@@ -721,13 +721,13 @@ float File::GetZSpacing()
     {
     return zspacing;
     }
- 
+
    const std::string &strSpacingBSlices = GetEntryValue(0x0018,0x0088);
 
    if ( strSpacingBSlices == GDCM_UNFOUND )
    {
       gdcmWarningMacro("Unfound Spacing Between Slices (0018,0088)");
-      const std::string &strSliceThickness = GetEntryValue(0x0018,0x0050);       
+      const std::string &strSliceThickness = GetEntryValue(0x0018,0x0050);
       if ( strSliceThickness == GDCM_UNFOUND )
       {
          gdcmWarningMacro("Unfound Slice Thickness (0018,0050)");
@@ -735,7 +735,7 @@ float File::GetZSpacing()
       }
       else
       {
-         // if no 'Spacing Between Slices' is found, 
+         // if no 'Spacing Between Slices' is found,
          // we assume slices join together
          // (no overlapping, no interslice gap)
          // if they don't, we're fucked up
@@ -743,7 +743,7 @@ float File::GetZSpacing()
       }
    }
    //else
-   
+
    float zsp = (float)atof( strSpacingBSlices.c_str());
    if (zsp == 0.0) // last change not to break further computations ...
       zsp = 1.0;
@@ -758,7 +758,7 @@ float File::GetZSpacing()
  */
 float File::GetXOrigin()
 {
-   float xImPos, yImPos, zImPos;  
+   float xImPos, yImPos, zImPos;
    if ( GetOriginFromSequence(xImPos, yImPos, zImPos) )
    {
    return xImPos;
@@ -786,7 +786,7 @@ float File::GetXOrigin()
 }
 
 // Special case:
-//  ts["1.2.840.10008.5.1.4.1.1.4.1"] = "Enhanced MR Image Storage"; 
+//  ts["1.2.840.10008.5.1.4.1.1.4.1"] = "Enhanced MR Image Storage";
 bool File::GetOriginFromSequence(float &xorigin, float &yorigin, float &zorigin)
 {
 
@@ -835,7 +835,7 @@ bool File::GetOriginFromSequence(float &xorigin, float &yorigin, float &zorigin)
      if( !p2 ) return false;
      ContentEntry *entry = dynamic_cast<ContentEntry *>(p2);
      std::string origin = entry->GetValue();
-      if ( sscanf( origin.c_str(), "%f \\ %f \\%f ", 
+      if ( sscanf( origin.c_str(), "%f \\ %f \\%f ",
           &xorigin, &yorigin, &zorigin) != 3 )
       {
          gdcmWarningMacro( "wrong Image Position Patient (0020,0032). "
@@ -871,7 +871,7 @@ float File::GetYOrigin()
       {
          gdcmWarningMacro( "Unfound Image Position (RET) (0020,0030)");
          return 0.;
-      }  
+      }
    }
 
    if ( sscanf( strImPos.c_str(), "%f \\%f \\%f ", &xImPos, &yImPos, &zImPos) != 3 )
@@ -892,7 +892,7 @@ float File::GetYOrigin()
  */
 float File::GetZOrigin()
 {
-   float xImPos, yImPos, zImPos; 
+   float xImPos, yImPos, zImPos;
    if ( GetOriginFromSequence(xImPos, yImPos, zImPos) )
    {
    return zImPos;
@@ -916,7 +916,7 @@ float File::GetZOrigin()
    strImPos = GetEntryValue(0x0020,0x0030); // For ACR-NEMA images
    if ( strImPos != GDCM_UNFOUND )
    {
-      if ( sscanf( strImPos.c_str(), 
+      if ( sscanf( strImPos.c_str(),
           "%f \\%f \\%f ", &xImPos, &yImPos, &zImPos ) != 3 )
       {
          gdcmWarningMacro( "Wrong Image Position (RET) (0020,0030)");
@@ -957,13 +957,13 @@ float File::GetZOrigin()
          return zImPos;
       }
    }
-   gdcmWarningMacro( "Unfound Location (0020,0050)");  
+   gdcmWarningMacro( "Unfound Location (0020,0050)");
 
    return 0.; // Hopeless
 }
 
 // Special case:
-//  ts["1.2.840.10008.5.1.4.1.1.4.1"] = "Enhanced MR Image Storage"; 
+//  ts["1.2.840.10008.5.1.4.1.1.4.1"] = "Enhanced MR Image Storage";
 bool File::GetImageOrientationFromSequence(float io[6])
 {
    //io is supposed to be float[6]
@@ -1013,7 +1013,7 @@ bool File::GetImageOrientationFromSequence(float io[6])
      if( !p2 ) return false;
      ContentEntry *entry = dynamic_cast<ContentEntry *>(p2);
      std::string orientation = entry->GetValue();
-      if ( sscanf( orientation.c_str(), "%f \\ %f \\%f \\%f \\%f \\%f ", 
+      if ( sscanf( orientation.c_str(), "%f \\ %f \\%f \\%f \\%f \\%f ",
           &io[0], &io[1], &io[2], &io[3], &io[4], &io[5]) != 6 )
       {
          gdcmWarningMacro( "wrong Image Orientation Patient (0020,0037). "
@@ -1048,7 +1048,7 @@ bool File::GetImageOrientationPatient( float iop[6] )
    // 0020 0037 DS REL Image Orientation (Patient)
    if ( (strImOriPat = GetEntryValue(0x0020,0x0037)) != GDCM_UNFOUND )
    {
-      if ( sscanf( strImOriPat.c_str(), "%f \\ %f \\%f \\%f \\%f \\%f ", 
+      if ( sscanf( strImOriPat.c_str(), "%f \\ %f \\%f \\%f \\%f \\%f ",
           &iop[0], &iop[1], &iop[2], &iop[3], &iop[4], &iop[5]) != 6 )
       {
          gdcmWarningMacro( "Wrong Image Orientation Patient (0020,0037)."
@@ -1061,7 +1061,7 @@ bool File::GetImageOrientationPatient( float iop[6] )
    // 0020 0035 DS REL Image Orientation (RET)
    else if ( (strImOriPat = GetEntryValue(0x0020,0x0035)) != GDCM_UNFOUND )
    {
-      if ( sscanf( strImOriPat.c_str(), "%f \\ %f \\%f \\%f \\%f \\%f ", 
+      if ( sscanf( strImOriPat.c_str(), "%f \\ %f \\%f \\%f \\%f \\%f ",
           &iop[0], &iop[1], &iop[2], &iop[3], &iop[4], &iop[5]) != 6 )
       {
          gdcmWarningMacro( "wrong Image Orientation Patient (0020,0035). "
@@ -1270,7 +1270,7 @@ bool File::IsSignedPixelData()
       return false;
    }
    int sign = atoi( strSign.c_str() );
-   if ( sign == 0 ) 
+   if ( sign == 0 )
    {
       return false;
    }
@@ -1362,25 +1362,25 @@ bool File::IsYBRFull()
   *          are NOT considered as LUT, since nobody knows
   *          how to deal with them
   *          Please warn me if you know sbdy that *does* know ... jprx
-  * @return true if LUT Descriptors and LUT Tables were found 
+  * @return true if LUT Descriptors and LUT Tables were found
   */
 bool File::HasLUT()
 {
    // Some SIEMENS MOSAIC have a RGB LUT but are declared as MONOCHROME2 ...
    if( !IsPaletteColor() ) return false;
 
-   // Check the presence of the LUT Descriptors, and LUT Tables    
-   // LutDescriptorRed    
+   // Check the presence of the LUT Descriptors, and LUT Tables
+   // LutDescriptorRed
    if ( !GetDocEntry(0x0028,0x1101) )
    {
       return false;
    }
-   // LutDescriptorGreen 
+   // LutDescriptorGreen
    if ( !GetDocEntry(0x0028,0x1102) )
    {
       return false;
    }
-   // LutDescriptorBlue 
+   // LutDescriptorBlue
    if ( !GetDocEntry(0x0028,0x1103) )
    {
       return false;
@@ -1390,19 +1390,19 @@ bool File::HasLUT()
    {
       return false;
    }
-   // Green Palette Color Lookup Table Data       
+   // Green Palette Color Lookup Table Data
    if ( !GetDocEntry(0x0028,0x1202) )
    {
       return false;
    }
-   // Blue Palette Color Lookup Table Data      
+   // Blue Palette Color Lookup Table Data
    if ( !GetDocEntry(0x0028,0x1203) )
    {
       return false;
    }
 
    // FIXME : (0x0028,0x3006) : LUT Data (CTX dependent)
-   //         NOT taken into account, but we don't know how to use it ...   
+   //         NOT taken into account, but we don't know how to use it ...
    return true;
 }
 
@@ -1411,7 +1411,7 @@ bool File::HasLUT()
   *             else 0
   * @return Lookup Table number of Bits , 0 by default
   *          when (0028,0004),Photometric Interpretation = [PALETTE COLOR ]
-  * @ return bit number of each LUT item 
+  * @ return bit number of each LUT item
   */
 int File::GetLUTNbits()
 {
@@ -1439,7 +1439,7 @@ int File::GetLUTNbits()
 }
 
 // Special case:
-//  ts["1.2.840.10008.5.1.4.1.1.4.1"] = "Enhanced MR Image Storage"; 
+//  ts["1.2.840.10008.5.1.4.1.1.4.1"] = "Enhanced MR Image Storage";
 bool File::GetRescaleSlopeIntercept(double &slope, double &intercept)
 {
    slope = 1.0;
@@ -1566,9 +1566,9 @@ double File::GetRescaleSlope()
 }
 
 /**
- * \brief This function is intended to user who doesn't want 
+ * \brief This function is intended to user who doesn't want
  *   to have to manage a LUT and expects to get an RBG Pixel image
- *   (or a monochrome one ...) 
+ *   (or a monochrome one ...)
  * \warning to be used with GetImagePixels()
  * @return 1 if Gray level, 3 if Color (RGB, YBR, *or PALETTE COLOR*)
  */
@@ -1599,9 +1599,9 @@ int File::GetNumberOfScalarComponents()
    }
 
    std::string strPhotometricInterpretation = GetEntryValue( 0x0028, 0x0004 );
-   // beware of trailing space at end of string      
+   // beware of trailing space at end of string
    // DICOM tags are never of odd length
-   if ( strPhotometricInterpretation == GDCM_UNFOUND   || 
+   if ( strPhotometricInterpretation == GDCM_UNFOUND   ||
         Util::DicomStringEqual(strPhotometricInterpretation, "MONOCHROME1") ||
         Util::DicomStringEqual(strPhotometricInterpretation, "MONOCHROME2") )
    {
@@ -1615,9 +1615,9 @@ int File::GetNumberOfScalarComponents()
 }
 
 /**
- * \brief This function is intended to user that DOESN'T want 
+ * \brief This function is intended to user that DOESN'T want
  *  to get RGB pixels image when it's stored as a PALETTE COLOR image
- *   - the (vtk) user is supposed to know how deal with LUTs - 
+ *   - the (vtk) user is supposed to know how deal with LUTs -
  * \warning to be used with GetImagePixelsRaw()
  * @return 1 if Gray level, 3 if Color (RGB or YBR - NOT 'PALETTE COLOR' -)
  */
@@ -1635,7 +1635,7 @@ int File::GetNumberOfScalarComponentsRaw()
 }
 
 /**
- * \brief   Recover the offset (from the beginning of the file) 
+ * \brief   Recover the offset (from the beginning of the file)
  *          of *image* pixels (not *icone image* pixels, if any !)
  * @return Pixel Offset
  */
@@ -1657,7 +1657,7 @@ size_t File::GetPixelOffset()
 /**
  * \brief   Recover the pixel area length (in Bytes)
  * @return Pixel Element Length, as stored in the header
- *         (NOT the memory space necessary to hold the Pixels 
+ *         (NOT the memory space necessary to hold the Pixels
  *          -in case of embeded compressed image-)
  *         0 : NOT USABLE file. The caller has to check.
  */
@@ -1680,35 +1680,35 @@ size_t File::GetPixelAreaLength()
  * \brief Adds the characteristics of a new element we want to anonymize
  * @param   group  Group number of the target tag.
  * @param   elem Element number of the target tag.
- * @param   value new value (string) to substitute with 
+ * @param   value new value (string) to substitute with
  */
-void File::AddAnonymizeElement (uint16_t group, uint16_t elem, 
-                                std::string const &value) 
-{ 
+void File::AddAnonymizeElement (uint16_t group, uint16_t elem,
+                                std::string const &value)
+{
    Element el;
    el.Group = group;
    el.Elem  = elem;
    el.Value = value;
-   UserAnonymizeList.push_back(el); 
+   UserAnonymizeList.push_back(el);
 }
 
 /**
  * \brief Overwrites in the file the values of the DicomElements
- *       held in the list 
+ *       held in the list
  */
 void File::AnonymizeNoLoad()
 {
-   std::fstream *fp = new std::fstream(Filename.c_str(), 
-                              std::ios::in | std::ios::out | std::ios::binary); 
+   std::fstream *fp = new std::fstream(Filename.c_str(),
+                              std::ios::in | std::ios::out | std::ios::binary);
    gdcm::DocEntry *d;
    uint32_t offset;
    uint32_t lgth;
    uint32_t valLgth = 0;
    std::string *spaces;
-   for (ListElements::iterator it = UserAnonymizeList.begin();  
+   for (ListElements::iterator it = UserAnonymizeList.begin();
                                it != UserAnonymizeList.end();
                              ++it)
-   { 
+   {
       d = GetDocEntry( (*it).Group, (*it).Elem);
 
       if ( d == NULL)
@@ -1730,7 +1730,7 @@ void File::AnonymizeNoLoad()
       }
       fp->seekp( offset, std::ios::beg );
       fp->write( (*it).Value.c_str(), lgth );
-     
+
    }
    fp->close();
    delete fp;
@@ -1747,12 +1747,12 @@ bool File::AnonymizeFile()
    if ( UserAnonymizeList.begin() == UserAnonymizeList.end() )
    {
       // If exist, replace by spaces
-      SetValEntry ("  ",0x0010, 0x2154); // Telephone   
+      SetValEntry ("  ",0x0010, 0x2154); // Telephone
       SetValEntry ("  ",0x0010, 0x1040); // Adress
       SetValEntry ("  ",0x0010, 0x0020); // Patient ID
 
       DocEntry* patientNameHE = GetDocEntry (0x0010, 0x0010);
-  
+
       if ( patientNameHE ) // we replace it by Study Instance UID (why not ?)
       {
          std::string studyInstanceUID =  GetEntryValue (0x0020, 0x000d);
@@ -1769,10 +1769,10 @@ bool File::AnonymizeFile()
    else
    {
       gdcm::DocEntry *d;
-      for (ListElements::iterator it = UserAnonymizeList.begin();  
+      for (ListElements::iterator it = UserAnonymizeList.begin();
                                   it != UserAnonymizeList.end();
                                 ++it)
-      {  
+      {
          d = GetDocEntry( (*it).Group, (*it).Elem);
 
          if ( d == NULL)
@@ -1850,16 +1850,16 @@ bool File::AnonymizeFile()
 }
 
 /**
- * \brief Performs some consistency checking on various 'File related' 
- *       (as opposed to 'DicomDir related') entries 
- *       then writes in a file all the (Dicom Elements) included the Pixels 
+ * \brief Performs some consistency checking on various 'File related'
+ *       (as opposed to 'DicomDir related') entries
+ *       then writes in a file all the (Dicom Elements) included the Pixels
  * @param fileName file name to write to
- * @param writetype type of the file to be written 
+ * @param writetype type of the file to be written
  *          (ACR, ExplicitVR, ImplicitVR)
  */
 bool File::Write(std::string fileName, FileType writetype)
 {
-   std::ofstream *fp = new std::ofstream(fileName.c_str(), 
+   std::ofstream *fp = new std::ofstream(fileName.c_str(),
                                          std::ios::out | std::ios::binary);
    if (*fp == NULL)
    {
@@ -1906,7 +1906,7 @@ bool File::Write(std::string fileName, FileType writetype)
 void File::ComputeRLEInfo()
 {
    std::string ts = GetTransferSyntax();
-   if ( !Global::GetTS()->IsRLELossless(ts) ) 
+   if ( !Global::GetTS()->IsRLELossless(ts) )
    {
       return;
    }
@@ -1931,13 +1931,13 @@ void File::ComputeRLEInfo()
    // on the RLE fragments in a RLEFramesInfo.
    // Note: - when only a single frame is present, this is a
    //         classical image.
-   //       - when more than one frame are present, then we are in 
+   //       - when more than one frame are present, then we are in
    //         the case of a multi-frame image.
    long frameLength;
    int i=0;
    uint32_t sum = 0;
    while ( (frameLength = ReadTagLength(0xfffe, 0xe000)) != 0 )
-   { 
+   {
       // Since we have read the basic offset table, let's check the value were correct
       // or else produce a warning:
       if ( BasicOffsetTableItemValue )
@@ -1964,14 +1964,14 @@ void File::ComputeRLEInfo()
          // There should be at most 15 segments (refer to RLEFrame class)
          gdcmWarningMacro( "Too many segments.");
       }
- 
+
       uint32_t rleSegmentOffsetTable[16];
       for( int k = 1; k <= 15; k++ )
       {
          rleSegmentOffsetTable[k] = ReadInt32();
       }
 
-      // Deduce from both RLE Header and frameLength 
+      // Deduce from both RLE Header and frameLength
       // the fragment length, and again store this info
       // in a RLEFramesInfo.
       long rleSegmentLength[15];
@@ -1986,7 +1986,7 @@ void File::ComputeRLEInfo()
           }
        }
 
-       rleSegmentLength[nbRleSegments] = frameLength 
+       rleSegmentLength[nbRleSegments] = frameLength
                                       - rleSegmentOffsetTable[nbRleSegments];
        SkipBytes(rleSegmentLength[nbRleSegments]);
 
@@ -2032,7 +2032,7 @@ void File::ComputeJPEGFragmentInfo()
    int i=0;
    uint32_t sum = 0;
    while ( (fragmentLength = ReadTagLength(0xfffe, 0xe000)) != 0 )
-   { 
+   {
       // Since we have read the basic offset table, let's check the value were correct
       // or else produce a warning:
       // A.4 Transfer syntaxes for encapsulation of encoded pixel data:
@@ -2075,7 +2075,7 @@ void File::ComputeJPEGFragmentInfo()
 }
 
 /**
- * \brief   Assuming the internal file pointer \ref Document::Fp 
+ * \brief   Assuming the internal file pointer \ref Document::Fp
  *          is placed at the beginning of a tag, check whether this
  *          tag is (TestGroup, TestElem).
  * \warning On success the internal file pointer \ref Document::Fp
@@ -2119,7 +2119,7 @@ bool File::ReadTag(uint16_t testGroup, uint16_t testElem)
        << std::hex << testGroup << "," << testElem << ")" << std::endl
        << "   but instead we encountered tag ("
        << std::hex << itemTagGroup << "," << itemTagElem << ")"
-       << "  at address: " << "  0x(" << (unsigned int)positionOnEntry << ")" 
+       << "  at address: " << "  0x(" << (unsigned int)positionOnEntry << ")"
        ) ;
       Fp->seekg(positionOnEntry, std::ios::beg);
 
@@ -2129,7 +2129,7 @@ bool File::ReadTag(uint16_t testGroup, uint16_t testElem)
 }
 
 /**
- * \brief   Assuming the internal file pointer \ref Document::Fp 
+ * \brief   Assuming the internal file pointer \ref Document::Fp
  *          is placed at the beginning of a tag (TestGroup, TestElement),
  *          read the length associated to the Tag.
  * \warning On success the internal file pointer \ref Document::Fp
@@ -2149,7 +2149,7 @@ uint32_t File::ReadTagLength(uint16_t testGroup, uint16_t testElem)
    {
       return 0;
    }
-                                                                                
+
    //// Then read the associated Item Length
    long currentPosition = Fp->tellg();
    (void)currentPosition;
@@ -2190,11 +2190,11 @@ void File::ReadEncapsulatedBasicOffsetTable()
          BasicOffsetTableItemValue[i] = *((uint32_t*)(&charBasicOffsetTableItemValue[4*i]));
 #if defined(GDCM_WORDS_BIGENDIAN) || defined(GDCM_FORCE_BIGENDIAN_EMULATION)
          uint32_t val = BasicOffsetTableItemValue[i];
-         BasicOffsetTableItemValue[i] 
-           = (  (val<<24)               | ((val<<8)  & 0x00ff0000) | 
+         BasicOffsetTableItemValue[i]
+           = (  (val<<24)               | ((val<<8)  & 0x00ff0000) |
               ( (val>>8)  & 0x0000ff00) |  (val>>24)               );
 #endif
-         gdcmDebugMacro( "Read one length for: " << 
+         gdcmDebugMacro( "Read one length for: " <<
                           std::hex << BasicOffsetTableItemValue[i] );
       }
 
@@ -2212,7 +2212,7 @@ void File::ReadEncapsulatedBasicOffsetTable()
  */
 File::File( std::string const &filename )
      :Document( )
-{    
+{
    RLEInfo  = new RLEFramesInfo;
    JPEGInfo = new JPEGFragmentsInfo;
    GrPixel  = 0x7fe0;  // to avoid further troubles
@@ -2230,7 +2230,7 @@ File::File( std::string const &filename )
  *         or no tag was found.
  * @deprecated Use the Load() [ + SetLoadMode() ] + SetFileName() functions instead
  */
-bool File::Load( std::string const &fileName ) 
+bool File::Load( std::string const &fileName )
 {
    GDCM_LEGACY_REPLACED_BODY(File::Load(std::string), "1.2",
                              File::Load());
