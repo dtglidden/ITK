@@ -59,6 +59,8 @@ SET(ITKIO_SRCS
   itkXMLFile.cxx
   itkMetaArrayReader.cxx
   itkMetaArrayWriter.cxx
+  itkRTSTRUCTIO.cxx
+  itkRTSTRUCTIOFactory.cxx
 )
 
 IF( NOT ITK_USE_TRANSFORM_IO_FACTORIES )
