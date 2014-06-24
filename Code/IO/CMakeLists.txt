@@ -113,13 +113,13 @@ ENDIF(SUN_COMPILER)
 # itkTestDriver is built even when BUILD_TESTING is FALSE to:
 # + allow to run WrapITK tests without the other of the ITK tests
 # + be used by external code like contributions to the insight journal
-ADD_EXECUTABLE(itkTestDriver itkTestDriver.cxx) 
+ADD_EXECUTABLE(itkTestDriver itkTestDriver.cxx)
 TARGET_LINK_LIBRARIES(itkTestDriver ITKIO)
 IF(NOT ITK_INSTALL_NO_DEVELOPMENT)
   INSTALL(TARGETS itkTestDriver
     RUNTIME DESTINATION ${ITK_INSTALL_BIN_DIR_CM24} COMPONENT Development)
 ENDIF(NOT ITK_INSTALL_NO_DEVELOPMENT)
-SET(ITK_TEST_DRIVER "${EXECUTABLE_OUTPUT_PATH}/itkTestDriver" 
+SET(ITK_TEST_DRIVER "${EXECUTABLE_OUTPUT_PATH}/itkTestDriver"
     CACHE INTERNAL "itkTestDriver path to be used by subprojects")
 
 IF(ITK_LIBRARY_PROPERTIES)
